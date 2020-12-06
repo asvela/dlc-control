@@ -6,16 +6,18 @@ Will check that wavelength setpoint and interal scan settings are within accepta
 ranges (will raise OutOfRangeError if not).
 
 Todo:
-* Allow interal current scan to be used
+* Handle scan outputs to OutA and OutB
 * Make update of interdependent scan settings update all relevant private
   dictionary entries
+* The frequency limits for interal scan are not correct
 
-Andreas Svela // 2020
+Andreas Svela // Dec 2020
 """
 
 import sys
 import time
 import enum
+import numpy as np
 import toptica.lasersdk.dlcpro.v2_4_0 as toptica
 
 _ip = "169.254.99.22"
@@ -53,8 +55,11 @@ def print_dict(d, indent=0, header=""):
 class OutputChannel(enum.Enum):
     PC = 50
     CC = 51
+    OutA = 20
+    OutB = 21
 
 class InputChannel(enum.Enum):
+    NotSelected = -3
     Fine1 = 0
     Fine2 = 1
     Fast3 = 2
@@ -66,7 +71,7 @@ class DLCcontrol:
     _scan_parameters = None
     _lims = None
 
-    def __init__(self, ip=_ip, open_on_init=True):
+    def __init__(self, ip=_ip, open_on_init=True, **kwargs):
         self.connection = toptica.NetworkConnection(ip)
         self.dlc = toptica.DLCpro(self.connection)
         if open_on_init:
@@ -84,6 +89,8 @@ class DLCcontrol:
         self.get_limits_from_dlc()
         self.get_scan_parameters()
         self.get_remote_parameters()
+        self.define_internal_shorthands()
+        self.update_scan_range()
 
     def close(self):
         if self._is_open:
@@ -95,9 +102,9 @@ class DLCcontrol:
                       "vmin":  self.dlc.laser1.dl.pc.voltage_min.get(),
                       "vmax":  self.dlc.laser1.dl.pc.voltage_max.get(),
                       "cmin":  60.0, # lasing threshold
-                      "cmax":  300.0}
-        self._vrange = [self._lims["vmin"], self._lims["vmax"]] #shorthand
-        self._crange = [self._lims["cmin"], self._lims["cmax"]] #shorthand
+                      "cmax":  300.0,
+                      "fmin":  0.02,
+                      "fmax":  400} # cannot find max in manual
         return self._lims
 
     def get_scan_parameters(self):
@@ -109,6 +116,22 @@ class DLCcontrol:
                                  "start":          self.scan_start,
                                  "end":            self.scan_end}
         return self._scan_parameters
+
+    def define_internal_shorthands(self):
+        # constants
+        self._vrange = [self._lims["vmin"], self._lims["vmax"]]
+        self._crange = [self._lims["cmin"], self._lims["cmax"]]
+
+    def update_scan_range(self, channel=None):
+        if channel is None:
+            channel = self._scan_parameters["output channel"]
+        if channel == OutputChannel.CC:
+            self._scan_range = self._crange
+        elif channel == OutputChannel.PC:
+            self._scan_range = self._vrange
+        else:
+            self._scan_range = [-np.inf, np.inf]
+            print("(!) Warning: Scan range for OutA and OutB is not limted", flush=True)
 
     def get_remote_parameters(self):
         self._remote_parameters = {}
@@ -168,8 +191,10 @@ class DLCcontrol:
 
     @remote_select.setter
     def remote_select(self, select: str):
-        """Analogue Remote Control for DLC pro can target either current (cc)
-        or voltage (pc), commands are otherwise the same"""
+        """Analogue Remote Control for DLC pro can both current (cc)
+        and voltage (pc) and be used simultaneously. In this wrapper
+        both can be used simultaneously, but one must choose which
+        is receiveing the commands at any given time with this select property"""
         if select.lower() == "cc":
             self._remote_str = "cc"
             self._remote_unit = self.dlc.laser1.dl.cc.external_input
@@ -195,7 +220,7 @@ class DLCcontrol:
 
     @remote_signal.setter
     def remote_signal(self, val):
-        """Choose which output channel to use for the
+        """Choose which output channel to use for the ARC
         val : {"Fine1", "Fine2", "Fast3", "Fast4",
                InputChannel.Fine1, InputChannel.Fine2,
                InputChannel.Fast3, InputChannel.Fast4}"""
@@ -240,7 +265,8 @@ class DLCcontrol:
 
     @scan_output_channel.setter
     def scan_output_channel(self, val):
-        """The internal scan can only act on the piezo or the current
+        """The internal scan can only act on the piezo or the current at any
+        given time
         val : {"CC", "PC", OutputChannel.CC, OutputChannel.PC}"""
         try:
             if isinstance(val, OutputChannel):
@@ -252,10 +278,9 @@ class DLCcontrol:
         except KeyError:
             raise ValueError( "Channel must be 'CC', 'PC', OutputChannel.CC, or "
                              f"OutputChannel.PC (tried with '{val}')")
-        if num == OutputChannel["CC"].value:
-            raise NotImplementedError("DLCcontrol can not yet handle out of range current scan values")
         self.dlc.laser1.scan.output_channel.set(num)
         self._scan_parameters["scan_output_channel"] = OutputChannel(num)
+        self.update_scan_range(OutputChannel(num))
 
     @property
     def scan_frequency(self):
@@ -264,7 +289,7 @@ class DLCcontrol:
     @scan_frequency.setter
     def scan_frequency(self, val: float):
         val = float(val)
-        self.check_value(val, "scan frequency", [0.02, 100])
+        self.check_value(val, "scan frequency", (self._lims["fmin"], self._lims["fmax"]))
         self.dlc.laser1.scan.frequency.set(val)
         self._scan_parameters["frequency"] = val
 
@@ -277,8 +302,8 @@ class DLCcontrol:
         val = float(val)
         offset = self.scan_offset
         new_range = [offset-val/2, offset+val/2]
-        if min(new_range) < self._lims["vmin"] or max(new_range) > self._lims["vmax"]:
-            raise OutOfRangeError(new_range, "voltage", self._vrange)
+        if min(new_range) < self._scan_range[0] or max(new_range) > self._scan_range[1]:
+            raise OutOfRangeError(new_range, "scan", self._scan_range)
         self.dlc.laser1.scan.amplitude.set(val)
         self._scan_parameters["amplitude"] = val
 
@@ -289,7 +314,10 @@ class DLCcontrol:
     @scan_offset.setter
     def scan_offset(self, val: float):
         val = float(val)
-        self.check_value(val, "scan offset", self._vrange)
+        amplitude = self.scan_amplitude
+        new_range = [val-amplitude/2, val+amplitude/2]
+        if min(new_range) < self._scan_range[0] or max(new_range) > self._scan_range[1]:
+            raise OutOfRangeError(new_range, "scan", self._scan_range)
         self.dlc.laser1.scan.offset.set(val)
         self._scan_parameters["offset"] = val
 
@@ -300,7 +328,7 @@ class DLCcontrol:
     @scan_start.setter
     def scan_start(self, val: float):
         val = float(val)
-        self.check_value(val, "scan start", self._vrange)
+        self.check_value(val, "scan start", self._scan_range)
         self.dlc.laser1.scan.start.set(val)
         self._scan_parameters["start"] = val
 
@@ -311,7 +339,7 @@ class DLCcontrol:
     @scan_end.setter
     def scan_end(self, val: float):
         val = float(val)
-        self.check_value(val, "scan end", self._vrange)
+        self.check_value(val, "scan end", self._scan_range)
         self.dlc.laser1.scan.end.set(val)
         self._scan_parameters["end"] = val
 
@@ -326,11 +354,8 @@ def show_all_parameters(ip=_ip):
 def test(ip=_ip):
     with DLCcontrol(ip) as dlc:
         print_dict(dlc.get_scan_parameters())
-        print_dict(dlc.get_remote_parameters(), header="Remote parameters")
-        dlc.scan_start = 101
-        dlc.scan_end = 140
-        print_dict(dlc.get_scan_parameters())
-        dlc.scan_output_channel = OutputChannel.CC
+        # print_dict(dlc.get_remote_parameters(), header="Remote parameters")
+        # dlc.scan_output_channel = OutputChannel.PC
 
 
 if __name__ == "__main__":

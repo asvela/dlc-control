@@ -161,11 +161,21 @@ class DLCcontrol:
     def emission(self):
         return self.dlc.emission.get()
 
-    @emission.setter
-    def emission(self, val):
-        # Line below does not work, apparently not settable
-        # self.dlc.emission_button_enabled.set(bool(val))
-        raise NotImplementedError
+    @property
+    def emission_button(self):
+        return self.dlc.emission_button_enabled.get()
+
+    @property
+    def current_enabled(self):
+        return self.dlc.laser1.dl.cc.enabled.get()
+
+    @current_enabled.setter
+    def current_enabled(self, val: bool):
+        """Sneaky way to control emission on/off provided the button on the
+        DLCpro is enabled"""
+        if val and not self.emission_button:
+            print("(!) Emission button on DLC not enabled, so cannot enable emission")
+        self.dlc.laser1.dl.cc.enabled.set(val)
 
     ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
@@ -345,19 +355,51 @@ class DLCcontrol:
 
 
 
-## Test and examples ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+## Examples ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 def show_all_parameters(ip=_ip):
     with DLCcontrol(ip) as dlc:
         print_dict(dlc.get_all_parameters(), header="All parameters that can be controlled with this wrapper")
 
-def test(ip=_ip):
+def step_through_scan_range(ip=_ip, steps=20):
+    """Step through the internal voltage/current scan range currently in use"""
     with DLCcontrol(ip) as dlc:
-        print_dict(dlc.get_scan_parameters())
-        # print_dict(dlc.get_remote_parameters(), header="Remote parameters")
-        # dlc.scan_output_channel = OutputChannel.PC
+        # Read initial values
+        initial_end = dlc.scan_end
+        initial_offset = dlc.scan_offset
+        initial_amplitude = dlc.scan_amplitude
+        # Define range to scan
+        range = np.linspace(0, -initial_amplitude, steps)
+        dlc.scan_amplitude = 0
+        for i, change in enumerate(range):
+            print(f"{i}: change to {initial_end+change:.3f}V")
+            try:
+                dlc.scan_offset = initial_end + change
+            except dlc.OutOfRangeError as e:
+                print(e)
+                break
+            time.sleep(1)
+        print("Restore initial state")
+        dlc.scan_offset = initial_offset
+        dlc.scan_amplitude = initial_amplitude
+
+def emission_status(ip=_ip):
+    _on_off = {True: "on", False: "off"}
+    _enabled_disabled = {True: "enabled", False: "disabled"}
+    with DLCcontrol(ip) as dlc:
+        print("(!) Enabling laser current")
+        dlc.current_enabled = True
+        print(f"Emission button is {_enabled_disabled[dlc.emission_button]}")
+        print(f"Laser current is {_enabled_disabled[dlc.current_enabled]}")
+        print(f"Therefore, emission is {_on_off[dlc.emission]}")
+        print("(!) Disabling laser current")
+        dlc.current_enabled = False
+        print(f"Emission button is {_enabled_disabled[dlc.emission_button]}")
+        print(f"Laser current is {_enabled_disabled[dlc.current_enabled]}")
+        print(f"Therefore, emission is {_on_off[dlc.emission]}")
 
 
 if __name__ == "__main__":
-    # show_all_parameters()
-    test()
+    show_all_parameters()
+    emission_status()
+    # step_through_scan_range()

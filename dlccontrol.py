@@ -6,10 +6,13 @@ Will check that wavelength setpoint and interal scan settings are within accepta
 ranges (will raise OutOfRangeError if not).
 
 Todo:
-* Handle scan outputs to OutA and OutB
+* Handle limits for scan outputs to OutA and OutB (they can currently be used,
+  just no checks on the range)
 * Make update of interdependent scan settings update all relevant private
   dictionary entries
-* The frequency limits for interal scan are not correct
+
+Notes:
+* The upper frequency limit for interal scan is set very low
 
 Andreas Svela // Dec 2020
 """

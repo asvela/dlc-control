@@ -45,3 +45,33 @@ with toptica.DLCpro(toptica.NetworkConnection("xx.xx.xx.xx")) as dlc:
             dlc.laser1.scan.amplitude.set(float(i))
         dlc.laser1.scan.amplitude.set(initial_amplitude)
 ```
+
+The module also provides some convenient dictionaries with all the settings it
+can modify, these dictionaries can be saved with measurement data to make sure
+all settings are recorded. Here is a nested dictionary printed with the module's
+`print_dict()` function:
+
+```
+-------------------------------------------------------
+scan:
+ | enabled       : True
+ | output channel: OutputChannel.PC
+ | frequency     : 50.0000290562942
+ | amplitude     : 21.0
+ | offset        : 61.0
+ | start         : 50.5
+ | end           : 71.5
+analogue remote:
+ | cc:
+ |  | enabled: False
+ |  | factor : 10.0
+ |  | signal : InputChannel.Fine1
+ | pc:
+ |  | enabled: False
+ |  | factor : 10.0
+ |  | signal : InputChannel.Fine2
+wavelength:
+ | wl setpoint: 1550.46
+ | wl actual  : 1550.460841087153
+-------------------------------------------------------
+```

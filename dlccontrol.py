@@ -17,13 +17,17 @@ Notes:
 Andreas Svela // Dec 2020
 """
 
+import os
 import sys
 import time
 import enum
+import json
+import argparse
 import numpy as np
 import toptica.lasersdk.dlcpro.v2_4_0 as toptica
 
-_ip = "169.254.99.22"
+_ip_apollo = "169.254.99.22"
+_ip = _ip_apollo
 
 class OutOfRangeError(ValueError):
     """Custom out of range errors"""
@@ -55,18 +59,22 @@ def print_dict(d, indent=0, header=""):
     if not indent:
         print(line)
 
-class OutputChannel(enum.Enum):
+class OutputChannel(int, enum.Enum): # int needed to avoid custom json serialiser
     PC = 50
     CC = 51
     OutA = 20
     OutB = 21
 
-class InputChannel(enum.Enum):
+class InputChannel(int, enum.Enum):
     NotSelected = -3
     Fine1 = 0
     Fine2 = 1
     Fast3 = 2
     Fast4 = 3
+
+# Dicts for converting between bools and text
+_on_off = {True: "on", False: "off"}
+_enabled_disabled = {True: "enabled", False: "disabled"}
 
 class DLCcontrol:
     _is_open = False
@@ -146,6 +154,8 @@ class DLCcontrol:
         return self._remote_parameters
 
     def get_all_parameters(self):
+        """Returns an updated dictionary of all the parameters that can be set
+        with the module"""
         wls = {"wl setpoint": self.wavelength_setpoint,
                "wl actual": self.wavelength_actual}
         params = {"scan":            self.get_scan_parameters(), # updating scan parameters as they are interdependent
@@ -153,10 +163,38 @@ class DLCcontrol:
                   "wavelength":      wls}
         return params
 
+    def save_parameters(self, fname):
+        """Grab an updated set of laser parameters and save to a json file"""
+        params = self.get_all_parameters()
+        if not fname[-4:] == ".json":
+            fname += ".json"
+        if os.path.exists(fname):
+            raise RuntimeError(f"File '{fname}' already exists")
+        with open(fname, 'w') as outfile:
+            json.dump(params, outfile)
+
+    def load_parameters(self, fname, print_result=True):
+        """Load (but not set!) parameters from json file"""
+        if not fname[-4:] == ".json":
+            fname += ".json"
+        with open(fname) as json_file:
+            params = json.load(json_file)
+        if print_result:
+            print_dict(params)
+        return params
+
+    def set_parameters(self, params: dict):
+        raise NotImplementedError("Still to be implemented")
+
     def check_value(self, val: float, parameter_name: str, range: list):
         """Check that a value is within a given range, raise error if not"""
         if not range[0] <= val <= range[1]:
             raise OutOfRangeError(val, parameter_name, range)
+
+    def verbose_emission_status(self):
+        print(f"Emission button is {_enabled_disabled[self.emission_button]}")
+        print(f"Laser current is {_enabled_disabled[self.current_enabled]}")
+        print(f"Therefore, emission is {_on_off[self.emission]}")
 
     ## Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
@@ -364,45 +402,76 @@ def show_all_parameters(ip=_ip):
     with DLCcontrol(ip) as dlc:
         print_dict(dlc.get_all_parameters(), header="All parameters that can be controlled with this wrapper")
 
-def step_through_scan_range(ip=_ip, steps=20):
-    """Step through the internal voltage/current scan range currently in use"""
+def save_all_parameters(ip=_ip, fname="laser_parameters"):
     with DLCcontrol(ip) as dlc:
-        # Read initial values
-        initial_end = dlc.scan_end
-        initial_offset = dlc.scan_offset
-        initial_amplitude = dlc.scan_amplitude
-        # Define range to scan
-        range = np.linspace(0, -initial_amplitude, steps)
+        dlc.save_parameters(fname)
+
+def step_through_scan_range(ip=_ip, steps=20, dlc=None):
+    """Step through the internal voltage/current scan range currently in use"""
+    if dlc is None:
+        dlc = DLCcontrol(ip)
+        close_flag = True
+    else:
+        close_flag = False
+    # Read initial values
+    initial_end = dlc.scan_end
+    initial_offset = dlc.scan_offset
+    initial_amplitude = dlc.scan_amplitude
+    # Define range to scan
+    range = np.linspace(0, -initial_amplitude, steps)
+    try:
         dlc.scan_amplitude = 0
         for i, change in enumerate(range):
-            print(f"{i}: change to {initial_end+change:.3f}V")
             try:
-                dlc.scan_offset = initial_end + change
-            except dlc.OutOfRangeError as e:
-                print(e)
+                print(f"{i}: change to {initial_end+change:.3f}V")
+                try:
+                    dlc.scan_offset = initial_end + change
+                except dlc.OutOfRangeError as e:
+                    print(e)
+                    break
+                time.sleep(1)
+            except KeyboardInterrupt:
+                print("Stopping scan")
                 break
-            time.sleep(1)
+    finally:
         print("Restore initial state")
         dlc.scan_offset = initial_offset
         dlc.scan_amplitude = initial_amplitude
+        if close_flag:
+            dlc.close()
 
-def emission_status(ip=_ip):
-    _on_off = {True: "on", False: "off"}
-    _enabled_disabled = {True: "enabled", False: "disabled"}
+def emission_control_demo(ip=_ip):
     with DLCcontrol(ip) as dlc:
         print("(!) Enabling laser current")
         dlc.current_enabled = True
-        print(f"Emission button is {_enabled_disabled[dlc.emission_button]}")
-        print(f"Laser current is {_enabled_disabled[dlc.current_enabled]}")
-        print(f"Therefore, emission is {_on_off[dlc.emission]}")
+        dlc.verbose_emission_status()
         print("(!) Disabling laser current")
         dlc.current_enabled = False
-        print(f"Emission button is {_enabled_disabled[dlc.emission_button]}")
-        print(f"Laser current is {_enabled_disabled[dlc.current_enabled]}")
-        print(f"Therefore, emission is {_on_off[dlc.emission]}")
+        dlc.verbose_emission_status()
 
+def main():
+    parser = argparse.ArgumentParser(description='A few useful laser control funtions')
+    parser.add_argument('-i', '--ip', type=str, default="",
+                        help=f"The ip of the laser (defaults to {_ip})")
+    parser.add_argument('-e', '--emission-status', action='store_true',
+                        help="Print the emission status of the device")
+    parser.add_argument('-s', '--save-filename', dest='fname', type=str, default=None,
+                        help=("Save all laser parameters to a json file to filename"))
+    parser.add_argument('-f', '--folder', type=str, default="./",
+                        help=("Select a folder for storing saved files if different "
+                                  "from the folder where the script is exectuted"))
+    parser.add_argument('-n', '--steps', type=int, default=0,
+                        help=("Scan discretely through the current laser span in <STEPS>"))
+    args = parser.parse_args()
+
+    ip = args.ip if args.ip else _ip
+    with DLCcontrol(ip) as dlc:
+        if args.e:
+            dlc.verbose_emission_status()
+        if args.fname is not None:
+            dlc.save_parameters(args.folder+args.fname)
+        if args.steps:
+            step_through_scan_range(ip, args.steps, dlc)
 
 if __name__ == "__main__":
-    show_all_parameters()
-    emission_status()
-    # step_through_scan_range()
+    main()

@@ -1,6 +1,8 @@
-## DLC pro control
+## Toptica DLC pro control
 
 Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro
+
+Provides a command line programme also, run `python dlccontrol.py -h` to learn more.
 
 Example use
 ```python
@@ -46,9 +48,13 @@ with toptica.DLCpro(toptica.NetworkConnection("xx.xx.xx.xx")) as dlc:
         dlc.laser1.scan.amplitude.set(initial_amplitude)
 ```
 
+More examples in the 
+
 The module also provides some convenient dictionaries with all the settings it
 can modify, these dictionaries can be saved with measurement data to make sure
-all settings are recorded. Here is a nested dictionary printed with the module's
+all settings are recorded. The DLCcontrol class can dump these dicts to json. 
+
+Here is a nested dictionary printed with the module's
 `print_dict()` function:
 
 ```

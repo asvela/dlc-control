@@ -10,9 +10,13 @@ Todo:
   just no checks on the range)
 * Make update of interdependent scan settings update all relevant private
   dictionary entries
+* Set parameters from dict
 
 Notes:
 * The upper frequency limit for interal scan is set very low
+
+(Word of caution: This module controls potentially Class 4 lasers.
+Use is entirely on your own risk.)
 
 Andreas Svela // Dec 2020
 """
@@ -76,6 +80,7 @@ class InputChannel(int, enum.Enum):
 _on_off = {True: "on", False: "off"}
 _enabled_disabled = {True: "enabled", False: "disabled"}
 
+
 class DLCcontrol:
     _is_open = False
     _remote_parameters = None
@@ -97,15 +102,18 @@ class DLCcontrol:
     def open(self):
         self.dlc.open()
         self._is_open = True
+        # Make sure all class sttributes are up to date
         self.get_limits_from_dlc()
         self.get_scan_parameters()
         self.get_remote_parameters()
         self.define_internal_shorthands()
-        self.update_scan_range()
+        self.update_scan_range_attribute()
 
     def close(self):
         if self._is_open:
             self.dlc.close()
+
+    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     def get_limits_from_dlc(self):
         self._lims = {"wlmin": self.dlc.laser1.ctl.wavelength_min.get(),
@@ -117,6 +125,11 @@ class DLCcontrol:
                       "fmin":  0.02,
                       "fmax":  400} # cannot find max in manual
         return self._lims
+
+    def check_value(self, val: float, parameter_name: str, range: list):
+        """Check that a value is within a given range, raise error if not"""
+        if not range[0] <= val <= range[1]:
+            raise OutOfRangeError(val, parameter_name, range)
 
     def get_scan_parameters(self):
         self._scan_parameters = {"enabled":        self.scan_enabled,
@@ -133,7 +146,7 @@ class DLCcontrol:
         self._vrange = [self._lims["vmin"], self._lims["vmax"]]
         self._crange = [self._lims["cmin"], self._lims["cmax"]]
 
-    def update_scan_range(self, channel=None):
+    def update_scan_range_attribute(self, channel=None):
         if channel is None:
             channel = self._scan_parameters["output channel"]
         if channel == OutputChannel.CC:
@@ -185,11 +198,6 @@ class DLCcontrol:
 
     def set_parameters(self, params: dict):
         raise NotImplementedError("Still to be implemented")
-
-    def check_value(self, val: float, parameter_name: str, range: list):
-        """Check that a value is within a given range, raise error if not"""
-        if not range[0] <= val <= range[1]:
-            raise OutOfRangeError(val, parameter_name, range)
 
     def verbose_emission_status(self):
         print(f"Emission button is {_enabled_disabled[self.emission_button]}")
@@ -331,7 +339,7 @@ class DLCcontrol:
                              f"OutputChannel.PC (tried with '{val}')")
         self.dlc.laser1.scan.output_channel.set(num)
         self._scan_parameters["scan_output_channel"] = OutputChannel(num)
-        self.update_scan_range(OutputChannel(num))
+        self.update_scan_range_attribute(OutputChannel(num))
 
     @property
     def scan_frequency(self):
@@ -442,7 +450,10 @@ def step_through_scan_range(ip=_ip, steps=20, dlc=None):
 
 def emission_control_demo(ip=_ip):
     with DLCcontrol(ip) as dlc:
-        print("(!) Enabling laser current")
+        print("Emission status:")
+        dlc.verbose_emission_status()
+        print("(!) WARNING Enabling laser current in three seconds")
+        time.sleep(3)
         dlc.current_enabled = True
         dlc.verbose_emission_status()
         print("(!) Disabling laser current")
@@ -463,7 +474,6 @@ def main():
     parser.add_argument('-n', '--steps', type=int, default=0,
                         help=("Scan discretely through the current laser span in <STEPS>"))
     args = parser.parse_args()
-
     ip = args.ip if args.ip else _ip
     with DLCcontrol(ip) as dlc:
         if args.e:

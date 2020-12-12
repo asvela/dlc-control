@@ -11,6 +11,7 @@ Todo:
 * Make update of interdependent scan settings update all relevant private
   dictionary entries
 * Set parameters from dict
+* Set current when not scanning
 
 Notes:
 * The upper frequency limit for interal scan is set very low
@@ -464,8 +465,10 @@ def main():
     parser = argparse.ArgumentParser(description='A few useful laser control funtions')
     parser.add_argument('-i', '--ip', type=str, default="",
                         help=f"The ip of the laser (defaults to {_ip})")
-    parser.add_argument('-e', '--emission-status', action='store_true',
+    parser.add_argument('-e', '--emission-status', dest='emission', action='store_true',
                         help="Print the emission status of the device")
+    parser.add_argument('-p', '--parameters', action='store_true',
+                            help="Print the laser parameters")
     parser.add_argument('-s', '--save-filename', dest='fname', type=str, default=None,
                         help=("Save all laser parameters to a json file to filename"))
     parser.add_argument('-f', '--folder', type=str, default="./",
@@ -476,8 +479,11 @@ def main():
     args = parser.parse_args()
     ip = args.ip if args.ip else _ip
     with DLCcontrol(ip) as dlc:
-        if args.e:
+        if args.emission:
             dlc.verbose_emission_status()
+        if args.parameters:
+            params = dlc.get_all_parameters()
+            print_dict(params)
         if args.fname is not None:
             dlc.save_parameters(args.folder+args.fname)
         if args.steps:

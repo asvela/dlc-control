@@ -1,7 +1,6 @@
 ## Toptica DLC pro control
 
-.. image:: https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square
-  :alt: CodeFactor Grade
+![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square)
 
 (Word of caution: This module controls potentially Class 4 lasers.
 Use is entirely on your own risk.)

@@ -23,11 +23,11 @@ _ip = "169.254.99.22"
 class OutOfRangeError(ValueError):
     """Custom out of range errors"""
 
-    def __init__(self, value, parameter_name: str, range: list):
+    def __init__(self, value, parameter_name: str, permitted_range: list):
         self.value = value
         self.parameter_name = parameter_name
-        self.range = range
-        self.message = f"{value} is not within the permitted {parameter_name} range {range}"
+        self.range = permitted_range
+        self.message = f"{value} is not within the permitted {parameter_name} range {permitted_range}"
         super().__init__(self.message)
 
 def print_dict(d, indent=0, header=""):
@@ -127,10 +127,10 @@ class DLCcontrol:
                   "wavelength":      wls}
         return params
 
-    def check_value(self, val: float, parameter_name: str, range: list):
+    def check_value(self, val: float, parameter_name: str, permitted_range: list):
         """Check that a value is within a given range, raise error if not"""
-        if not range[0] <= val <= range[1]:
-            raise OutOfRangeError(val, parameter_name, range)
+        if not permitted_range[0] <= val <= permitted_range[1]:
+            raise OutOfRangeError(val, parameter_name, permitted_range)
 
     ## Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 

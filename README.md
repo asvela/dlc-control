@@ -2,6 +2,8 @@
 
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square)](https://www.codefactor.io/repository/github/asvela/dlc-control)
 
+[![MIT License](https://img.shields.io/github/license/asvela/dlc-control?style=flat-square)](https://github.com/asvela/dlc-control/blob/main/LICENSE)
+
 Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro
 
 *Word of caution: This module controls potentially Class 4 lasers.*
@@ -49,7 +51,7 @@ with ctrl.DLCcontrol("xx.xx.xx.xx") as dlc:
       dlc.scan_output_channel = "PC"
       initial_amplitude = dlc.scan_amplitude
       dlc.scan_frequency = 20
-      for i in range (10):
+      for i in range(10):
           dlc.scan_amplitude = i
        dlc.scan_amplitude = initial_amplitude
 ```
@@ -72,7 +74,7 @@ with toptica.DLCpro(toptica.NetworkConnection("xx.xx.xx.xx")) as dlc:
         dlc.laser1.scan.output_channel.set(50)
         initial_amplitude = dlc.laser1.scan.amplitude.get()
         dlc.laser1.scan.frequency.set(20)
-        for i in range (10):
+        for i in range(10):
             dlc.laser1.scan.amplitude.set(float(i))
         dlc.laser1.scan.amplitude.set(initial_amplitude)
 ```

@@ -49,6 +49,35 @@ current)<ul>
 </ul>
 <p>The class will check that wavelength setpoint and internal scan settings are
 within acceptable ranges (and raise a <code><a title="dlccontrol.OutOfRangeError" href="#dlccontrol.OutOfRangeError">OutOfRangeError</a></code> if not).</p>
+<p>The module also provides some convenient dictionaries with all the settings it
+can modify, these dictionaries can be saved with measurement data to make sure
+all settings are recorded. The <code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code> class can dump these dicts to
+<code>json</code> files.</p>
+<p>Here are the parameters that can be saved, queried from the instrument and
+printed with <code>DLCcontrol.get_all_parameters(verbose=True)</code>:</p>
+<pre><code>-------------------------------------------------------
+scan:
+ | enabled       : True
+ | output channel: OutputChannel.PC
+ | frequency     : 50.0000290562942
+ | amplitude     : 21.0
+ | offset        : 61.0
+ | start         : 50.5
+ | end           : 71.5
+analogue remote:
+ | cc:
+ |  | enabled: False
+ |  | factor : 10.0
+ |  | signal : InputChannel.Fine1
+ | pc:
+ |  | enabled: False
+ |  | factor : 10.0
+ |  | signal : InputChannel.Fine2
+wavelength:
+ | wl setpoint: 1550.46
+ | wl actual  : 1550.460841087153
+-------------------------------------------------------
+</code></pre>
 <h3 id="examples">Examples</h3>
 <p>The module uses properties extensively (listed as <code>Instance variables</code> in the
 docs), which means class attributes have setter and getter functions,
@@ -93,35 +122,6 @@ with toptica.DLCpro(toptica.NetworkConnection(&quot;xx.xx.xx.xx&quot;)) as dlc:
         dlc.laser1.scan.amplitude.set(initial_amplitude)
 </code></pre>
 <p>More examples are in the <code>examples.py</code> module.</p>
-<p>The module also provides some convenient dictionaries with all the settings it
-can modify, these dictionaries can be saved with measurement data to make sure
-all settings are recorded. The <code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code> class can dump these dicts to
-<code>json</code> files.</p>
-<p>Here is a nested dictionary printed with the module's
-<code>_print_dict()</code> function:</p>
-<pre><code>-------------------------------------------------------
-scan:
- | enabled       : True
- | output channel: OutputChannel.PC
- | frequency     : 50.0000290562942
- | amplitude     : 21.0
- | offset        : 61.0
- | start         : 50.5
- | end           : 71.5
-analogue remote:
- | cc:
- |  | enabled: False
- |  | factor : 10.0
- |  | signal : InputChannel.Fine1
- | pc:
- |  | enabled: False
- |  | factor : 10.0
- |  | signal : InputChannel.Fine2
-wavelength:
- | wl setpoint: 1550.46
- | wl actual  : 1550.460841087153
--------------------------------------------------------
-</code></pre>
 <h3 id="todos-known-issues">Todos &amp; known issues</h3>
 <ul>
 <li>The upper frequency limit for internal scan is set very low, find out what

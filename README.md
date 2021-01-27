@@ -27,6 +27,39 @@ The ``DLCcontrol`` class can read and control:
 The class will check that wavelength setpoint and internal scan settings are
 within acceptable ranges (and raise a ``OutOfRangeError`` if not).
 
+The module also provides some convenient dictionaries with all the settings it
+can modify, these dictionaries can be saved with measurement data to make sure
+all settings are recorded. The ``DLCcontrol`` class can dump these dicts to
+``json`` files.
+
+Here are the parameters that can be saved, queried from the instrument and
+printed with ``DLCcontrol.get_all_parameters(verbose=True)``:
+
+```
+-------------------------------------------------------
+scan:
+ | enabled       : True
+ | output channel: OutputChannel.PC
+ | frequency     : 50.0000290562942
+ | amplitude     : 21.0
+ | offset        : 61.0
+ | start         : 50.5
+ | end           : 71.5
+analogue remote:
+ | cc:
+ |  | enabled: False
+ |  | factor : 10.0
+ |  | signal : InputChannel.Fine1
+ | pc:
+ |  | enabled: False
+ |  | factor : 10.0
+ |  | signal : InputChannel.Fine2
+wavelength:
+ | wl setpoint: 1550.46
+ | wl actual  : 1550.460841087153
+-------------------------------------------------------
+```
+
 
 ### Examples
 
@@ -79,39 +112,6 @@ with toptica.DLCpro(toptica.NetworkConnection("xx.xx.xx.xx")) as dlc:
 ```
 
 More examples are in the `examples.py` module.
-
-The module also provides some convenient dictionaries with all the settings it
-can modify, these dictionaries can be saved with measurement data to make sure
-all settings are recorded. The ``DLCcontrol`` class can dump these dicts to
-``json`` files.
-
-Here is a nested dictionary printed with the module's
-`_print_dict()` function:
-
-```
--------------------------------------------------------
-scan:
- | enabled       : True
- | output channel: OutputChannel.PC
- | frequency     : 50.0000290562942
- | amplitude     : 21.0
- | offset        : 61.0
- | start         : 50.5
- | end           : 71.5
-analogue remote:
- | cc:
- |  | enabled: False
- |  | factor : 10.0
- |  | signal : InputChannel.Fine1
- | pc:
- |  | enabled: False
- |  | factor : 10.0
- |  | signal : InputChannel.Fine2
-wavelength:
- | wl setpoint: 1550.46
- | wl actual  : 1550.460841087153
--------------------------------------------------------
-```
 
 
 ### Todos & known issues

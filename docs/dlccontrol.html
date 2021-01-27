@@ -121,22 +121,24 @@ wavelength:
  | wl actual  : 1550.460841087153
 -------------------------------------------------------
 </code></pre>
-<h3 id="notes">Notes</h3>
+<h3 id="todos-known-issues">Todos &amp; known issues</h3>
 <ul>
-<li>The upper frequency limit for internal scan is set very low</li>
-</ul>
-<h3 id="todos">Todos</h3>
-<ul>
-<li>Handle limits for scan outputs to OutA and OutB (they can currently be used,
-just no checks on the range)</li>
+<li>The upper frequency limit for internal scan is set very low, find out what
+the actual limits are for the voltage and current scan</li>
+<li>Handle limits for scan outputs to <code>OutA</code> and <code>OutB</code> (they can currently
+be used, just no checks on the range)</li>
 <li>Make update of interdependent scan settings update all relevant private
 dictionary entries</li>
-<li>Set parameters from dict</li>
-<li>Set current when not scanning</li>
+<li>Set parameters from dict/file</li>
+<li>Add property for setting the laser current when not scanning</li>
 </ul>
+<h3 id="source-contributions-license">Source, contributions &amp; license</h3>
+<p>The source is available on <a href="https://github.com/asvela/dlc-control/">Github</a>,
+please report issues there. Contributions are also welcome.
+The source code is licensed under the MIT license.</p>
 <h3 id="documentation">Documentation</h3>
 <p>Docs can be built with <code>python3 -m pdoc --html -o ./docs dlccontrol.py</code></p>
-<p>Available on <a href="https://asvela.github.io/dlc-control/">github pages</a></p>
+<p>Available on <a href="https://asvela.github.io/dlc-control/">Github pages</a></p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2165,8 +2167,8 @@ range</p></div>
 <ul>
 <li><a href="#toptica-dlc-pro-control">Toptica DLC pro control</a><ul>
 <li><a href="#examples">Examples</a></li>
-<li><a href="#notes">Notes</a></li>
-<li><a href="#todos">Todos</a></li>
+<li><a href="#todos-known-issues">Todos &amp; known issues</a></li>
+<li><a href="#source-contributions-license">Source, contributions &amp; license</a></li>
 <li><a href="#documentation">Documentation</a></li>
 </ul>
 </li>

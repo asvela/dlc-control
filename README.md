@@ -113,23 +113,27 @@ wavelength:
 ```
 
 
-### Notes
+### Todos & known issues
 
-* The upper frequency limit for internal scan is set very low
+  * The upper frequency limit for internal scan is set very low, find out what
+    the actual limits are for the voltage and current scan
+  * Handle limits for scan outputs to ``OutA`` and ``OutB`` (they can currently
+    be used, just no checks on the range)
+  * Make update of interdependent scan settings update all relevant private
+    dictionary entries
+  * Set parameters from dict/file
+  * Add property for setting the laser current when not scanning
 
 
-### Todos
+### Source, contributions & license
 
-* Handle limits for scan outputs to OutA and OutB (they can currently be used,
-  just no checks on the range)
-* Make update of interdependent scan settings update all relevant private
-  dictionary entries
-* Set parameters from dict
-* Set current when not scanning
+The source is available on [Github](https://github.com/asvela/dlc-control/),
+please report issues there. Contributions are also welcome.
+The source code is licensed under the MIT license.
 
 
 ### Documentation
 
 Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py``
 
-Available on [github pages](https://asvela.github.io/dlc-control/)
+Available on [Github pages](https://asvela.github.io/dlc-control/)

@@ -1,7 +1,6 @@
 ## Toptica DLC pro control
 
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square)](https://www.codefactor.io/repository/github/asvela/dlc-control)
-
 [![MIT License](https://img.shields.io/github/license/asvela/dlc-control?style=flat-square)](https://github.com/asvela/dlc-control/blob/main/LICENSE)
 
 Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro

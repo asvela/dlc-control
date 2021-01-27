@@ -1,5 +1,3 @@
 __pycache__/
-<<<<<<< HEAD
 *.json
-=======
->>>>>>> 680de81628793eec539ab60337fea6509caa7155
+.DS_Store

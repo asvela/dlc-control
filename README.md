@@ -2,14 +2,37 @@
 
 ![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square)
 
-(Word of caution: This module controls potentially Class 4 lasers.
-Use is entirely on your own risk.)
+Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro
 
-Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro.
+*Word of caution: This module controls potentially Class 4 lasers.*
+*Use is entirely on your own risk.*
 
-Provides a command line programme also, run `python dlccontrol.py -h` to learn more.
+The ``DLCcontrol`` class can read and control:
 
-Example use
+  * laser current on/off
+  * wavelength setpoint
+  * analogue remote control settings (can control laser current and/or piezo simultaneously)
+    - enable/disable
+    - select input channel
+    - set multiplier factor of the input voltage
+  * internal scan settings (both for scanning the piezo and laser
+    current)
+    - scan start
+    - scan end
+    - scan offset
+    - scan amplitude
+
+
+The class will check that wavelength setpoint and internal scan settings are
+within acceptable ranges (and raise a ``OutOfRangeError`` if not).
+
+
+### Examples
+
+The module uses properties extensively (listed as `Instance variables` in the
+docs), which means class attributes have setter and getter functions,
+which can be used like this:
+
 ```python
 import dlccontrol as ctrl
 
@@ -31,7 +54,8 @@ with ctrl.DLCcontrol("xx.xx.xx.xx") as dlc:
        dlc.scan_amplitude = initial_amplitude
 ```
 
-versus the Toptica SDK
+Doing the same with the Toptica SDK would look like this (and this module
+is providing a lot of other features in addition to simplifying the syntax)
 
 ```python
 import toptica.lasersdk.dlcpro.v2_4_0 as toptica
@@ -53,14 +77,15 @@ with toptica.DLCpro(toptica.NetworkConnection("xx.xx.xx.xx")) as dlc:
         dlc.laser1.scan.amplitude.set(initial_amplitude)
 ```
 
-More examples in the bottom section of the module.
+More examples are in the `examples.py` module.
 
 The module also provides some convenient dictionaries with all the settings it
 can modify, these dictionaries can be saved with measurement data to make sure
-all settings are recorded. The DLCcontrol class can dump these dicts to json.
+all settings are recorded. The ``DLCcontrol`` class can dump these dicts to
+``json`` files.
 
 Here is a nested dictionary printed with the module's
-`print_dict()` function:
+`_print_dict()` function:
 
 ```
 -------------------------------------------------------
@@ -86,3 +111,25 @@ wavelength:
  | wl actual  : 1550.460841087153
 -------------------------------------------------------
 ```
+
+
+### Notes
+
+* The upper frequency limit for internal scan is set very low
+
+
+### Todos
+
+* Handle limits for scan outputs to OutA and OutB (they can currently be used,
+  just no checks on the range)
+* Make update of interdependent scan settings update all relevant private
+  dictionary entries
+* Set parameters from dict
+* Set current when not scanning
+
+
+### Documentation
+
+Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py``
+
+Available on [github pages](https://asvela.github.io/dlc-control/)

@@ -16,7 +16,7 @@ import toptica.lasersdk.dlcpro.v2_4_0 as dlcsdk
 from toptica.lasersdk import decop, client
 from typing import Union, Tuple, List, Any
 
-IP = "0.0.0.0"
+IP = "192.168.100.100"
 """The default IP when initialising a ``DLCcontrol()``"""
 MAINTENANCE_PSW = "CAUTION"
 """Factory default password for maintenance mode user level"""

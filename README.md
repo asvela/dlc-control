@@ -8,10 +8,14 @@ Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DC
 *Word of caution: This module controls potentially Class 4 lasers.*
 *Use is entirely on your own risk.*
 
+API documentation available [here](https://asvela.github.io/dlc-control/).
+Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py``
+
 The ``DLCcontrol`` class can read and control:
 
   * laser current on/off
-  * wavelength setpoint
+  * wavelength setpoint for lasers that have this option
+  * laser diode setpoint for lasers that have this option
   * analogue remote control settings (can control laser current and/or piezo simultaneously)
     - enable/disable
     - select input channel
@@ -57,6 +61,9 @@ analogue remote:
 wavelength:
  | wl setpoint: 1550.46
  | wl actual  : 1550.460841087153
+temperatures:
+ | temp setpoint: None
+ | temp actual  : None
 -------------------------------------------------------
 ```
 
@@ -133,8 +140,6 @@ please report issues there. Contributions are also welcome.
 The source code is licensed under the MIT license.
 
 
-### Documentation
+### Change log
 
-Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py``
-
-Available on [Github pages](https://asvela.github.io/dlc-control/)
+  * v0.1.1 Nov 2021: Added support for temperature tuned lasers

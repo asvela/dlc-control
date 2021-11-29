@@ -41,6 +41,7 @@ printed with ``DLCcontrol.get_all_parameters(verbose=True)``:
 
 ```
 -------------------------------------------------------
+timestamp      : 2021-11-29 22:42:02.707762
 scan:
  | enabled       : True
  | output channel: OutputChannel.PC
@@ -149,4 +150,5 @@ The source code is licensed under the MIT license.
       attribute
     - Methods for setting and getting the user level for enabling change of
       restricted parameters
+    - Parameters dictionary now includes timestamp of the parameter set
     - Black formatting

@@ -1,9 +1,9 @@
-## Toptica DLC pro control
+## Toptica DLCpro control
 
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square)](https://www.codefactor.io/repository/github/asvela/dlc-control)
 [![MIT License](https://img.shields.io/github/license/asvela/dlc-control?style=flat-square)](https://github.com/asvela/dlc-control/blob/main/LICENSE)
 
-Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro
+Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCLpro
 
 *Word of caution: This module controls potentially Class 4 lasers.*
 *Use is entirely on your own risk.*
@@ -28,8 +28,8 @@ The ``DLCcontrol`` class can read and control:
     - scan amplitude
 
 
-The class will check that wavelength setpoint and internal scan settings are
-within acceptable ranges (and raise a ``OutOfRangeError`` if not).
+The class will check that the wavelength/temperature setpoint and internal scan 
+settings are within acceptable ranges (and raise a ``OutOfRangeError`` if not).
 
 The module also provides some convenient dictionaries with all the settings it
 can modify, these dictionaries can be saved with measurement data to make sure
@@ -77,7 +77,7 @@ which can be used like this:
 ```python
 import dlccontrol as ctrl
 
-with ctrl.DLCcontrol("xx.xx.xx.xx") as dlc:
+with ctrl.DLCcontrol("xx.xx.xx.xx", wl_setting_present=True) as dlc:
       dlc.wavelength_setpoint = 1550
       actual_wl = dlc.wavelength_actual
       # Set up a the analogue remote control sweeping the current with the
@@ -131,6 +131,7 @@ More examples are in the `examples.py` module.
     dictionary entries
   * Set parameters from dict/file
   * Add property for setting the laser current when not scanning
+  * Tests would be helpful...
 
 
 ### Source, contributions & license
@@ -142,4 +143,10 @@ The source code is licensed under the MIT license.
 
 ### Change log
 
-  * v0.1.1 Nov 2021: Added support for temperature tuned lasers
+  * v0.1.1 Nov 2021: 
+    - Added support for temperature tuned lasers
+    - Adding a `client` attribute to the `DLCcontrol` class to access any laser
+      attribute
+    - Methods for setting and getting the user level for enabling change of
+      restricted parameters
+    - Black formatting

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.2" />
+<meta name="generator" content="pdoc 0.10.0" />
 <title>dlccontrol API documentation</title>
-<meta name="description" content="Toptica DLC pro control …" />
+<meta name="description" content="Toptica DLCpro control …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -22,16 +22,19 @@
 <h1 class="title">Module <code>dlccontrol</code></h1>
 </header>
 <section id="section-intro">
-<h2 id="toptica-dlc-pro-control">Toptica DLC pro control</h2>
+<h2 id="toptica-dlcpro-control">Toptica DLCpro control</h2>
 <p><a href="https://www.codefactor.io/repository/github/asvela/dlc-control"><img alt="CodeFactor Grade" src="https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square"></a>
 <a href="https://github.com/asvela/dlc-control/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/asvela/dlc-control?style=flat-square"></a></p>
-<p>Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro</p>
+<p>Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCLpro</p>
 <p><em>Word of caution: This module controls potentially Class 4 lasers.</em>
 <em>Use is entirely on your own risk.</em></p>
+<p>API documentation available <a href="https://asvela.github.io/dlc-control/">here</a>.
+Docs can be built with <code>python3 -m pdoc --html -o ./docs dlccontrol.py</code></p>
 <p>The <code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code> class can read and control:</p>
 <ul>
 <li>laser current on/off</li>
-<li>wavelength setpoint</li>
+<li>wavelength setpoint for lasers that have this option</li>
+<li>laser diode setpoint for lasers that have this option</li>
 <li>analogue remote control settings (can control laser current and/or piezo simultaneously)<ul>
 <li>enable/disable</li>
 <li>select input channel</li>
@@ -47,8 +50,8 @@ current)<ul>
 </ul>
 </li>
 </ul>
-<p>The class will check that wavelength setpoint and internal scan settings are
-within acceptable ranges (and raise a <code><a title="dlccontrol.OutOfRangeError" href="#dlccontrol.OutOfRangeError">OutOfRangeError</a></code> if not).</p>
+<p>The class will check that the wavelength/temperature setpoint and internal scan
+settings are within acceptable ranges (and raise a <code><a title="dlccontrol.OutOfRangeError" href="#dlccontrol.OutOfRangeError">OutOfRangeError</a></code> if not).</p>
 <p>The module also provides some convenient dictionaries with all the settings it
 can modify, these dictionaries can be saved with measurement data to make sure
 all settings are recorded. The <code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code> class can dump these dicts to
@@ -76,15 +79,18 @@ analogue remote:
 wavelength:
  | wl setpoint: 1550.46
  | wl actual  : 1550.460841087153
+temperatures:
+ | temp setpoint: None
+ | temp actual  : None
 -------------------------------------------------------
 </code></pre>
 <h3 id="examples">Examples</h3>
 <p>The module uses properties extensively (listed as <code>Instance variables</code> in the
 docs), which means class attributes have setter and getter functions,
 which can be used like this:</p>
-<pre><code class="python">import dlccontrol as ctrl
+<pre><code class="language-python">import dlccontrol as ctrl
 
-with ctrl.DLCcontrol(&quot;xx.xx.xx.xx&quot;) as dlc:
+with ctrl.DLCcontrol(&quot;xx.xx.xx.xx&quot;, wl_setting_present=True) as dlc:
       dlc.wavelength_setpoint = 1550
       actual_wl = dlc.wavelength_actual
       # Set up a the analogue remote control sweeping the current with the
@@ -103,7 +109,7 @@ with ctrl.DLCcontrol(&quot;xx.xx.xx.xx&quot;) as dlc:
 </code></pre>
 <p>Doing the same with the Toptica SDK would look like this (and this module
 is providing a lot of other features in addition to simplifying the syntax)</p>
-<pre><code class="python">import toptica.lasersdk.dlcpro.v2_4_0 as toptica
+<pre><code class="language-python">import toptica.lasersdk.dlcpro.v2_4_0 as toptica
 
 with toptica.DLCpro(toptica.NetworkConnection(&quot;xx.xx.xx.xx&quot;)) as dlc:
         dlc.laser1.ctl.wavelength_set.set(float(1550))
@@ -132,14 +138,24 @@ be used, just no checks on the range)</li>
 dictionary entries</li>
 <li>Set parameters from dict/file</li>
 <li>Add property for setting the laser current when not scanning</li>
+<li>Tests would be helpful&hellip;</li>
 </ul>
 <h3 id="source-contributions-license">Source, contributions &amp; license</h3>
 <p>The source is available on <a href="https://github.com/asvela/dlc-control/">Github</a>,
 please report issues there. Contributions are also welcome.
 The source code is licensed under the MIT license.</p>
-<h3 id="documentation">Documentation</h3>
-<p>Docs can be built with <code>python3 -m pdoc --html -o ./docs dlccontrol.py</code></p>
-<p>Available on <a href="https://asvela.github.io/dlc-control/">Github pages</a></p>
+<h3 id="change-log">Change log</h3>
+<ul>
+<li>v0.1.1 Nov 2021: <ul>
+<li>Added support for temperature tuned lasers</li>
+<li>Adding a <code>client</code> attribute to the <code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code> class to access any laser
+attribute</li>
+<li>Methods for setting and getting the user level for enabling change of
+restricted parameters</li>
+<li>Black formatting</li>
+</ul>
+</li>
+</ul>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -150,65 +166,91 @@ The source code is licensed under the MIT license.</p>
 
 &#34;&#34;&#34;
 
+
 import os
-import sys
 import time
 import enum
 import json
 import argparse
 import numpy as np
-import toptica.lasersdk.dlcpro.v2_4_0 as toptica
+import toptica.lasersdk as lasersdk
+import toptica.lasersdk.dlcpro.v2_4_0 as dlcsdk
+from toptica.lasersdk import decop, client
+from typing import Union, Tuple, List, Any
 
-_IP_APOLLO = &#34;169.254.99.22&#34;
-
-IP = _IP_APOLLO
+IP = &#34;0.0.0.0&#34;
 &#34;&#34;&#34;The default IP when initialising a ``DLCcontrol()``&#34;&#34;&#34;
+MAINTENANCE_PSW = &#34;CAUTION&#34;
+&#34;&#34;&#34;Factory default password for maintenance mode user level&#34;&#34;&#34;
+
 
 class OutOfRangeError(ValueError):
     &#34;&#34;&#34;Custom out of range errors for when a parameter is outside the permitted
     range&#34;&#34;&#34;
 
-    def __init__(self, value, parameter_name: str, permitted_range: list):
+    def __init__(self, value: Any, parameter_name: str, permitted_range: List[Any]):
         self.value = value
         self.parameter_name = parameter_name
         self.range = permitted_range
-        self.message = f&#34;{value} is not within the permitted {parameter_name} range {permitted_range}&#34;
+        self.message = (
+            f&#34;{value} is not within the permitted &#34;
+            f&#34;{parameter_name} range {permitted_range}&#34;
+        )
         super().__init__(self.message)
 
-def _print_dict(d, indent=0, header=&#34;&#34;):
+
+def _check_value(val: float, parameter_name: str, permitted_range: List[float]):
+    &#34;&#34;&#34;Check that a value is within a given range, raise error if not
+
+    Raises
+    ------
+    OutOfRangeError
+        If ``val`` is not within the two values of the ``permitted_range``
+        list
+    &#34;&#34;&#34;
+    if not permitted_range[0] &lt;= val &lt;= permitted_range[1]:
+        raise OutOfRangeError(val, parameter_name, permitted_range)
+
+
+def _print_dict(the_dict: dict, indent: int = 0, header: str = &#34;&#34;):
     &#34;&#34;&#34;Recursive dictionary printing&#34;&#34;&#34;
-    longest_key_len = len(max(d.keys(), key=len))
-    line = &#34;-&#34;*max(len(header), longest_key_len, 50)
-    indent_spaces = &#34; | &#34;*indent
+    longest_key_len = len(max(the_dict.keys(), key=len))
+    line = &#34;-&#34; * max(len(header), longest_key_len, 50)
+    indent_spaces = &#34; | &#34; * indent
     if not indent:
         print(&#34;&#34;)
         if header:
             print(header)
         print(line)
-    for key, val in d.items():
+    for key, val in the_dict.items():
         if isinstance(val, dict):
             print(f&#34;{indent_spaces}{key}:&#34;)
-            _print_dict(val, indent=(indent+1))
+            _print_dict(val, indent=(indent + 1))
         else:
             print(indent_spaces, end=&#34;&#34;)
             print(f&#34;{key:&lt;{longest_key_len}}: {val}&#34;)
     if not indent:
         print(line)
 
+
 class OutputChannel(int, enum.Enum):  # int needed to avoid custom json serialiser
     &#34;&#34;&#34;Output channel name to numeric value conversion&#34;&#34;&#34;
+
     PC = 50
     CC = 51
     OutA = 20
     OutB = 21
 
+
 class InputChannel(int, enum.Enum):
     &#34;&#34;&#34;Input channel name to numeric value conversion&#34;&#34;&#34;
+
     NotSelected = -3
     Fine1 = 0
     Fine2 = 1
     Fast3 = 2
     Fast4 = 3
+
 
 # Dicts for converting between bools and text
 _ON_OFF = {True: &#34;on&#34;, False: &#34;off&#34;}
@@ -225,7 +267,15 @@ class DLCcontrol:
     open_on_init : bool, default ``True``
         Decide if ``open()`` should be called during the initialisation of
         the class object
+    wl_setting_present : bool, default ``False``
+        Use ``True`` if the wavelength of the laser can be set
+    temp_setting_present : bool, default ``False``
+        Use ``True`` if the temperature of the laser diode can be set
     &#34;&#34;&#34;
+
+    _ip = IP
+    _service_psw = &#34;look in datasheet&#34;
+    &#34;&#34;&#34;Custom SERVICE user level password unique to the DLCpro&#34;&#34;&#34;
     _is_open = False
     _remote_parameters = None
     _scan_parameters = None
@@ -234,10 +284,28 @@ class DLCcontrol:
     &#34;&#34;&#34;MHz/mA or MHz/V calibration for the internal scan. Set by calling the
     ``freq_per_sec_internal_scan()`` method. After being set, the calibration
     will be kept in memory for future calls&#34;&#34;&#34;
+    wl_setting_present = False
+    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a wavelength setpoint&#34;&#34;&#34;
+    temp_setting_present = False
+    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a temperature setpoint&#34;&#34;&#34;
 
-    def __init__(self, ip=IP, open_on_init=True, **kwargs):
-        self.connection = toptica.NetworkConnection(ip)
-        self.dlc = toptica.DLCpro(self.connection)
+    def __init__(
+        self,
+        ip=IP,
+        open_on_init=True,
+        wl_setting_present=None,
+        temp_setting_present=None,
+        **kwargs,
+    ):
+        if wl_setting_present is not None:
+            self.wl_setting_present = wl_setting_present
+        if temp_setting_present is not None:
+            self.temp_setting_present = temp_setting_present
+        if ip is not None:
+            self._ip = ip
+        self.connection = dlcsdk.NetworkConnection(self._ip)
+        self.client = client.Client(self.connection)
+        self.dlc = dlcsdk.DLCpro(self.connection)
         if open_on_init:
             self.open()
 
@@ -256,7 +324,6 @@ class DLCcontrol:
         self.get_limits_from_dlc()
         self.get_scan_parameters()
         self.get_remote_parameters()
-        self._define_internal_shorthands()
         self._update_scan_range_attribute()
 
     def close(self):
@@ -264,7 +331,32 @@ class DLCcontrol:
         if self._is_open:
             self.dlc.close()
 
-    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    def set_user_level(self, level: int, password: str = &#34;default&#34;, verbose=True):
+        &#34;&#34;&#34;Sets the user level privileges of the client *connection*, does not change
+        the user level on the DLCpro console&#34;&#34;&#34;
+        if password == &#34;default&#34;:
+            if level == 1:
+                print(
+                    &#34;CAUTION: This is SERVICE level user, protected by a custom password for each unit.&#34;
+                )
+                inp = input(&#34;Do you really really want to proceed? [y/N] &#34;)
+                if inp.lower() != &#34;y&#34;:
+                    print(&#34;Aborting user level change&#34;)
+                    return
+                password = self._service_psw
+            elif level == 2:
+                password = MAINTENANCE_PSW
+        ul = decop.UserLevel(level)
+        result = self.dlc.change_ul(ul, password)
+        if verbose:
+            print(f&#34;New user level: {result.name}&#34;)
+
+    def get_user_level(self) -&gt; decop.UserLevel:
+        &#34;&#34;&#34;Gets the user level privileges of the *connection*, does not reflect the
+        user level on the DLCpro console&#34;&#34;&#34;
+        return decop.UserLevel(self.client.get(&#34;ul&#34;))
+
+    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     def get_limits_from_dlc(self, verbose=False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the wavelength, piezo voltage, current and
@@ -275,31 +367,37 @@ class DLCcontrol:
         self._lims : dict
             The limits
         &#34;&#34;&#34;
-        self._lims = {&#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
-                      &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
-                      &#34;vmin&#34;:  self.dlc.laser1.dl.pc.voltage_min.get(),
-                      &#34;vmax&#34;:  self.dlc.laser1.dl.pc.voltage_max.get(),
-                      &#34;cmin&#34;:  60.0, # lasing threshold
-                      &#34;cmax&#34;:  300.0,
-                      &#34;fmin&#34;:  0.02,
-                      &#34;fmax&#34;:  400} # cannot find max in manual
+        self._lims = {
+            &#34;vmin&#34;: self.dlc.laser1.dl.pc.voltage_min.get(),
+            &#34;vmax&#34;: self.dlc.laser1.dl.pc.voltage_max.get(),
+            &#34;cmin&#34;: 0.0,
+            &#34;cmax&#34;: self.dlc.laser1.dl.cc.current_clip.get(),
+            &#34;fmin&#34;: 0.02,
+            &#34;fmax&#34;: 400,  # cannot find max in manual
+            &#34;tmin&#34;: None,
+            &#34;tmax&#34;: None,
+            &#34;wlmin&#34;: None,
+            &#34;wlmax&#34;: None,
+        }
+        if self.wl_setting_present:
+            self._lims.update(
+                {
+                    &#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
+                    &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
+                }
+            )
+        if self.temp_setting_present:
+            self._lims.update(
+                {
+                    &#34;tmin&#34;: self.dlc.laser1.dl.tc.temp_set_min.get(),
+                    &#34;tmax&#34;: self.dlc.laser1.dl.tc.temp_set_max.get(),
+                }
+            )
         if verbose:
             _print_dict(self._lims)
         return self._lims
 
-    def _check_value(self, val: float, parameter_name: str, permitted_range: list):
-        &#34;&#34;&#34;Check that a value is within a given range, raise error if not
-
-        Raises
-        ------
-        OutOfRangeError
-            If ``val`` is not within the two values of the ``permitted_range``
-            list
-        &#34;&#34;&#34;
-        if not permitted_range[0] &lt;= val &lt;= permitted_range[1]:
-            raise OutOfRangeError(val, parameter_name, permitted_range)
-
-    def get_scan_parameters(self, verbose=False) -&gt; dict:
+    def get_scan_parameters(self, verbose: bool = False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the current scan settings, populate the
         ``_scan_parameters`` dict attribute
 
@@ -308,23 +406,36 @@ class DLCcontrol:
         self._scan_parameters : dict
             All parameters for the internal scan
         &#34;&#34;&#34;
-        self._scan_parameters = {&#34;enabled&#34;:        self.scan_enabled,
-                                 &#34;output channel&#34;: self.scan_output_channel,
-                                 &#34;frequency&#34;:      self.scan_frequency,
-                                 &#34;amplitude&#34;:      self.scan_amplitude,
-                                 &#34;offset&#34;:         self.scan_offset,
-                                 &#34;start&#34;:          self.scan_start,
-                                 &#34;end&#34;:            self.scan_end}
+        self._scan_parameters = {
+            &#34;enabled&#34;: self.scan_enabled,
+            &#34;output channel&#34;: self.scan_output_channel,
+            &#34;frequency&#34;: self.scan_frequency,
+            &#34;amplitude&#34;: self.scan_amplitude,
+            &#34;offset&#34;: self.scan_offset,
+            &#34;start&#34;: self.scan_start,
+            &#34;end&#34;: self.scan_end,
+        }
         if verbose:
             _print_dict(self._scan_parameters)
         return self._scan_parameters
 
-    def _define_internal_shorthands(self):
-        &#34;&#34;&#34;Set these attributes as shorthands&#34;&#34;&#34;
-        self._vrange = [self._lims[&#34;vmin&#34;], self._lims[&#34;vmax&#34;]]
-        self._crange = [self._lims[&#34;cmin&#34;], self._lims[&#34;cmax&#34;]]
+    @property
+    def _vrange(self):
+        return self._lims[&#34;vmin&#34;], self._lims[&#34;vmax&#34;]
 
-    def _update_scan_range_attribute(self, channel=None):
+    @property
+    def _crange(self):
+        return self._lims[&#34;cmin&#34;], self._lims[&#34;cmax&#34;]
+
+    @property
+    def _trange(self):
+        return self._lims[&#34;tmin&#34;], self._lims[&#34;tmax&#34;]
+
+    @property
+    def _wlrange(self):
+        return self._lims[&#34;wlmin&#34;], self._lims[&#34;wlmax&#34;]
+
+    def _update_scan_range_attribute(self, channel: Union[None, OutputChannel] = None):
         if channel is None:
             channel = self._scan_parameters[&#34;output channel&#34;]
         if channel == OutputChannel.CC:
@@ -335,7 +446,7 @@ class DLCcontrol:
             self._scan_range = [-np.inf, np.inf]
             print(&#34;(!) Warning: Scan range for OutA and OutB is not limted&#34;, flush=True)
 
-    def get_remote_parameters(self, verbose=False):
+    def get_remote_parameters(self, verbose: bool = False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the analogue remote control settings, and
         populate the ``_remote_parameters`` dict attribute
 
@@ -347,14 +458,16 @@ class DLCcontrol:
         self._remote_parameters = {}
         for unit in (&#34;cc&#34;, &#34;pc&#34;):
             self.remote_select = unit
-            self._remote_parameters[unit] = {&#34;enabled&#34;: self.remote_enabled,
-                                             &#34;factor&#34;: self.remote_factor,
-                                             &#34;signal&#34;: self.remote_signal}
+            self._remote_parameters[unit] = {
+                &#34;enabled&#34;: self.remote_enabled,
+                &#34;factor&#34;: self.remote_factor,
+                &#34;signal&#34;: self.remote_signal,
+            }
         if verbose:
             _print_dict(self._remote_parameters)
         return self._remote_parameters
 
-    def get_all_parameters(self, verbose=False) -&gt; dict:
+    def get_all_parameters(self, verbose: bool = False) -&gt; dict:
         &#34;&#34;&#34;Returns an updated dictionary of all the parameters that can be set
         with the module
 
@@ -363,11 +476,18 @@ class DLCcontrol:
         dict
             A nested dictionary with the parameters
         &#34;&#34;&#34;
-        wls = {&#34;wl setpoint&#34;: self.wavelength_setpoint,
-               &#34;wl actual&#34;: self.wavelength_actual}
-        params = {&#34;scan&#34;:            self.get_scan_parameters(), # updating scan parameters as they are interdependent
-                  &#34;analogue remote&#34;: self._remote_parameters,
-                  &#34;wavelength&#34;:      wls}
+        wls = {
+            &#34;wl setpoint&#34;: self.wavelength_setpoint,
+            &#34;wl actual&#34;: self.wavelength_actual,
+        }
+        temps = {&#34;temp setpoint&#34;: self.temp_setpoint, &#34;temp actual&#34;: self.temp_actual}
+        # Updating scan parameters as they are interdependent
+        params = {
+            &#34;scan&#34;: self.get_scan_parameters(),
+            &#34;analogue remote&#34;: self._remote_parameters,
+            &#34;wavelength&#34;: wls,
+            &#34;temperature&#34;: temps,
+        }
         if verbose:
             _print_dict(params)
         return params
@@ -381,17 +501,17 @@ class DLCcontrol:
             If a file with name `fname` already exists
         &#34;&#34;&#34;
         params = self.get_all_parameters()
-        if not fname[-4:] == &#34;.json&#34;:
+        if not fname.endswith(&#34;.json&#34;):
             fname += &#34;.json&#34;
         if os.path.exists(fname):
             raise RuntimeError(f&#34;File &#39;{fname}&#39; already exists&#34;)
-        with open(fname, &#39;w&#39;) as outfile:
-            json.dump(params, outfile)
+        with open(fname, &#34;w&#34;) as outfile:
+            json.dump(params, outfile, indent=&#34;  &#34;)
 
     @staticmethod
-    def read_parameters(fname: str, verbose=True) -&gt; dict:
+    def read_parameters(fname: str, verbose: bool = True) -&gt; dict:
         &#34;&#34;&#34;Read (but not set!) parameters from json file&#34;&#34;&#34;
-        if not fname[-4:] == &#34;.json&#34;:
+        if not fname.endswith(&#34;.json&#34;):
             fname += &#34;.json&#34;
         with open(fname) as json_file:
             params = json.load(json_file)
@@ -418,7 +538,7 @@ class DLCcontrol:
         print(f&#34;Laser current is {_ENABLED_DISABLED[self.current_enabled]}&#34;)
         print(f&#34;Therefore, emission is {_ON_OFF[self.emission]}&#34;)
 
-    def freq_per_sec_internal_scan(self, calibration=None):
+    def freq_per_sec_internal_scan(self, calibration: float = None) -&gt; float:
         &#34;&#34;&#34;Calculate frequency span per second for the laser in MHz per second
         from the scan parameters
 
@@ -432,9 +552,11 @@ class DLCcontrol:
         peak_to_peak = params[&#34;amplitude&#34;]
         if calibration is not None:
             self.calibration = calibration
-        return freq_per_sec(scan_freq, peak_to_peak, scaling=1, calibration=self.calibration)
+        return freq_per_sec(
+            scan_freq, peak_to_peak, scaling=1, calibration=self.calibration
+        )
 
-    ## Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def emission(self) -&gt; bool:
@@ -459,28 +581,70 @@ class DLCcontrol:
             print(&#34;(!) Emission button on DLC not enabled, so cannot enable emission&#34;)
         self.dlc.laser1.dl.cc.enabled.set(val)
 
-    ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def wavelength_actual(self) -&gt; float:
         &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
+        if not self.wl_setting_present:
+            return None
         return self.dlc.laser1.ctl.wavelength_act.get()
 
     @property
     def wavelength_setpoint(self) -&gt; float:
         &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
+        if not self.wl_setting_present:
+            return None
         return self.dlc.laser1.ctl.wavelength_set.get()
 
     @wavelength_setpoint.setter
     def wavelength_setpoint(self, val: float):
+        if not self.wl_setting_present:
+            raise RuntimeError(
+                &#34;Cannot set wavelength when `wl_setting_present` is False&#34;
+            )
+        if val is None:
+            return
         val = float(val)
-        self._check_value(val, &#34;wavelength setpoint&#34;, [self._lims[&#34;wlmin&#34;], self._lims[&#34;wlmax&#34;]])
+        if self._wlrange[0] is None:
+            self.get_limits_from_dlc()
+        _check_value(val, &#34;wavelength setpoint&#34;, self._wlrange)
         self.dlc.laser1.ctl.wavelength_set.set(val)
 
-    ## Remote properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    ## Temperature properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
-    def remote_select(self) -&gt; tuple:
+    def temp_actual(self) -&gt; float:
+        &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
+        if not self.temp_setting_present:
+            return None
+        return self.dlc.laser1.dl.tc.temp_act.get()
+
+    @property
+    def temp_setpoint(self) -&gt; float:
+        &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
+        if not self.temp_setting_present:
+            return None
+        return self.dlc.laser1.dl.tc.temp_set.get()
+
+    @temp_setpoint.setter
+    def temp_setpoint(self, val: float):
+        if not self.temp_setting_present:
+            raise RuntimeError(
+                &#34;Cannot set diode temperature `temp_setting_present` is False&#34;
+            )
+        if val is None:
+            return
+        val = float(val)
+        if self._trange[0] is None:
+            self.get_limits_from_dlc()
+        _check_value(val, &#34;temperature setpoint&#34;, self._trange)
+        self.dlc.laser1.dl.tc.temp_set.set(val)
+
+    # Remote properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+
+    @property
+    def remote_select(self) -&gt; Tuple[str, Any]:
         &#34;&#34;&#34;Analogue Remote Control for both the DLCpro&#39;s current (cc)
         and voltage (pc) can be used simultaneously. With this class, both can
         be used simultaneously, with this select property choosing which remote
@@ -517,7 +681,9 @@ class DLCcontrol:
             self._remote_str = &#34;pc&#34;
             self._remote_unit = self.dlc.laser1.dl.pc.external_input
         else:
-            raise ValueError(f&#34;select must be either &#39;pc&#39; nor &#39;cc&#39; (tried using &#39;{select}&#39;)&#34;)
+            raise ValueError(
+                f&#34;select must be either &#39;pc&#39; nor &#39;cc&#39; (tried using &#39;{select}&#39;)&#34;
+            )
 
     @property
     def remote_enabled(self) -&gt; bool:
@@ -536,7 +702,7 @@ class DLCcontrol:
         return InputChannel(num)
 
     @remote_signal.setter
-    def remote_signal(self, val: InputChannel):
+    def remote_signal(self, val: Union[InputChannel, str]):
         &#34;&#34;&#34;Choose which output channel to use for the ARC
         val : {&#34;Fine1&#34;, &#34;Fine2&#34;, &#34;Fast3&#34;, &#34;Fast4&#34;,
                InputChannel.Fine1, InputChannel.Fine2,
@@ -549,8 +715,10 @@ class DLCcontrol:
             else:
                 raise KeyError
         except KeyError:
-            raise ValueError( &#34;Input channel must be one of &#39;Fine1&#39;, &#39;Fine2&#39;, &#34;
-                             f&#34;&#39;Fast3&#39;, &#39;Fast4&#39;, or an InputChannel (tried with &#39;{val}&#39;)&#34;)
+            raise ValueError(
+                &#34;Input channel must be one of &#39;Fine1&#39;, &#39;Fine2&#39;, &#34;
+                f&#34;&#39;Fast3&#39;, &#39;Fast4&#39;, or an InputChannel (tried with &#39;{val}&#39;)&#34;
+            ) from KeyError
         self._remote_unit.signal.set(num)
         self._remote_parameters[self._remote_str][&#34;signal&#34;] = InputChannel(num)
 
@@ -566,7 +734,7 @@ class DLCcontrol:
         self._remote_unit.factor.set(val)
         self._remote_parameters[self._remote_str][&#34;factor&#34;] = val
 
-    ## Scan properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Scan properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def scan_enabled(self) -&gt; bool:
@@ -586,7 +754,7 @@ class DLCcontrol:
         return OutputChannel(num)
 
     @scan_output_channel.setter
-    def scan_output_channel(self, val):
+    def scan_output_channel(self, val: Union[OutputChannel, str]):
         &#34;&#34;&#34;The internal scan can only act on eiter piezo or the current at any
         given time, or be directed to the DLC BNCs
         val : {&#34;CC&#34;, &#34;PC&#34;, OutputChannel.CC, OutputChannel.PC}&#34;&#34;&#34;
@@ -598,8 +766,10 @@ class DLCcontrol:
             else:
                 raise KeyError
         except KeyError:
-            raise ValueError( &#34;Channel must be &#39;CC&#39;, &#39;PC&#39;, OutputChannel.CC, or &#34;
-                             f&#34;OutputChannel.PC (tried with &#39;{val}&#39;)&#34;)
+            raise ValueError(
+                &#34;Channel must be &#39;CC&#39;, &#39;PC&#39;, OutputChannel.CC, or &#34;
+                f&#34;OutputChannel.PC (tried with &#39;{val}&#39;)&#34;
+            ) from KeyError
         self.dlc.laser1.scan.output_channel.set(num)
         self._scan_parameters[&#34;scan_output_channel&#34;] = OutputChannel(num)
         self._update_scan_range_attribute(OutputChannel(num))
@@ -612,7 +782,7 @@ class DLCcontrol:
     @scan_frequency.setter
     def scan_frequency(self, val: float):
         val = float(val)
-        self._check_value(val, &#34;scan frequency&#34;, (self._lims[&#34;fmin&#34;], self._lims[&#34;fmax&#34;]))
+        _check_value(val, &#34;scan frequency&#34;, (self._lims[&#34;fmin&#34;], self._lims[&#34;fmax&#34;]))
         self.dlc.laser1.scan.frequency.set(val)
         self._scan_parameters[&#34;frequency&#34;] = val
 
@@ -625,7 +795,7 @@ class DLCcontrol:
     def scan_amplitude(self, val: float):
         val = float(val)
         offset = self.scan_offset
-        new_range = [offset-val/2, offset+val/2]
+        new_range = [offset - val / 2, offset + val / 2]
         if min(new_range) &lt; self._scan_range[0] or max(new_range) &gt; self._scan_range[1]:
             raise OutOfRangeError(new_range, &#34;scan&#34;, self._scan_range)
         self.dlc.laser1.scan.amplitude.set(val)
@@ -640,7 +810,7 @@ class DLCcontrol:
     def scan_offset(self, val: float):
         val = float(val)
         amplitude = self.scan_amplitude
-        new_range = [val-amplitude/2, val+amplitude/2]
+        new_range = [val - amplitude / 2, val + amplitude / 2]
         if min(new_range) &lt; self._scan_range[0] or max(new_range) &gt; self._scan_range[1]:
             raise OutOfRangeError(new_range, &#34;scan&#34;, self._scan_range)
         self.dlc.laser1.scan.offset.set(val)
@@ -654,7 +824,7 @@ class DLCcontrol:
     @scan_start.setter
     def scan_start(self, val: float):
         val = float(val)
-        self._check_value(val, &#34;scan start&#34;, self._scan_range)
+        _check_value(val, &#34;scan start&#34;, self._scan_range)
         self.dlc.laser1.scan.start.set(val)
         self._scan_parameters[&#34;start&#34;] = val
 
@@ -666,13 +836,16 @@ class DLCcontrol:
     @scan_end.setter
     def scan_end(self, val: float):
         val = float(val)
-        self._check_value(val, &#34;scan end&#34;, self._scan_range)
+        _check_value(val, &#34;scan end&#34;, self._scan_range)
         self.dlc.laser1.scan.end.set(val)
         self._scan_parameters[&#34;end&#34;] = val
 
 
-def freq_per_sec(scan_freq, peak_to_peak, scaling, calibration):
+def freq_per_sec(
+    scan_freq: float, peak_to_peak: float, scaling: float, calibration: float
+) -&gt; float:
     &#34;&#34;&#34;Calculate frequency sweep per second for the laser in MHz per second
+    when using a triangular sweep function
 
     Parameters
     ----------
@@ -685,14 +858,14 @@ def freq_per_sec(scan_freq, peak_to_peak, scaling, calibration):
     calibration : float
         [MHz/mA or MHz/V]
     &#34;&#34;&#34;
-    scan_period = 1/(2*scan_freq) #sec
+    scan_period = 1 / (2 * scan_freq)  # sec
     # (division by two because of triangle wave and hence in practice
     #  sweeping double the speed)
-    current_span = peak_to_peak*scaling #mA
-    return current_span*calibration/scan_period #MHz/second
+    scaled_ptp = peak_to_peak * scaling  # mA or V
+    return scaled_ptp * calibration / scan_period  # MHz/second
 
 
-def freq_per_sec_from_params(params, calibration):
+def freq_per_sec_from_params(params: dict, calibration: float) -&gt; float:
     &#34;&#34;&#34;Calculate frequency sweep per second for the laser in MHz per second due
     to the internal scan using a params dictionary
 
@@ -708,9 +881,10 @@ def freq_per_sec_from_params(params, calibration):
     return freq_per_sec(scan_freq, peak_to_peak, scaling=1, calibration=calibration)
 
 
-## A programme ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+# A programme ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
-def step_through_scan_range(ip=IP, steps=20, dlc=None):
+
+def step_through_scan_range(ip=IP, steps: int = 20, dlc: DLCcontrol = None):
     &#34;&#34;&#34;A simple programme: Step through the internal voltage/current
     scan range currently in use
 
@@ -733,16 +907,16 @@ def step_through_scan_range(ip=IP, steps=20, dlc=None):
     initial_offset = dlc.scan_offset
     initial_amplitude = dlc.scan_amplitude
     # Define range to scan
-    range = np.linspace(0, -initial_amplitude, steps)
+    step_range = np.linspace(0, -initial_amplitude, steps)
     try:
         dlc.scan_amplitude = 0
-        for i, change in enumerate(range):
+        for i, change in enumerate(step_range):
             try:
                 print(f&#34;{i}: change to {initial_end+change:.3f}V&#34;)
                 try:
                     dlc.scan_offset = initial_end + change
-                except dlc.OutOfRangeError as e:
-                    print(e)
+                except dlc.OutOfRangeError as err:
+                    print(err)
                     break
                 time.sleep(1)
             except KeyboardInterrupt:
@@ -759,29 +933,58 @@ def step_through_scan_range(ip=IP, steps=20, dlc=None):
 def command_line_programme():
     &#34;&#34;&#34;Command line use of the module: run ``python dlccontrol.py -h`` to see
     the options&#34;&#34;&#34;
-    parser = argparse.ArgumentParser(description=&#39;A few useful laser control funtions&#39;)
-    parser.add_argument(&#39;-i&#39;, &#39;--ip&#39;, type=str, default=&#34;&#34;,
-                        help=f&#34;The ip of the laser (defaults to {IP})&#34;)
-    parser.add_argument(&#39;-e&#39;, &#39;--emission-status&#39;, dest=&#39;emission&#39;, action=&#39;store_true&#39;,
-                        help=&#34;Print the emission status of the device&#34;)
-    parser.add_argument(&#39;-p&#39;, &#39;--parameters&#39;, action=&#39;store_true&#39;,
-                            help=&#34;Print the laser parameters&#34;)
-    parser.add_argument(&#39;-s&#39;, &#39;--save-filename&#39;, dest=&#39;fname&#39;, type=str, default=None,
-                        help=(&#34;Save all laser parameters to a json file to filename&#34;))
-    parser.add_argument(&#39;-f&#39;, &#39;--folder&#39;, type=str, default=&#34;./&#34;,
-                        help=(&#34;Select a folder for storing saved files if different &#34;
-                                  &#34;from the folder where the script is exectuted&#34;))
-    parser.add_argument(&#39;-n&#39;, &#39;--steps&#39;, type=int, default=0,
-                        help=(&#34;Scan discretely through the current laser span in &lt;STEPS&gt;&#34;))
+    parser = argparse.ArgumentParser(description=&#34;A few useful laser control funtions&#34;)
+    parser.add_argument(
+        &#34;-i&#34;,
+        &#34;--ip&#34;,
+        type=str,
+        default=&#34;&#34;,
+        help=f&#34;The ip of the laser (defaults to {IP})&#34;,
+    )
+    parser.add_argument(
+        &#34;-e&#34;,
+        &#34;--emission-status&#34;,
+        dest=&#34;emission&#34;,
+        action=&#34;store_true&#34;,
+        help=&#34;Print the emission status of the device&#34;,
+    )
+    parser.add_argument(
+        &#34;-p&#34;, &#34;--parameters&#34;, action=&#34;store_true&#34;, help=&#34;Print the laser parameters&#34;
+    )
+    parser.add_argument(
+        &#34;-s&#34;,
+        &#34;--save-filename&#34;,
+        dest=&#34;fname&#34;,
+        type=str,
+        default=None,
+        help=(&#34;Save all laser parameters to a json file to filename&#34;),
+    )
+    parser.add_argument(
+        &#34;-f&#34;,
+        &#34;--folder&#34;,
+        type=str,
+        default=&#34;./&#34;,
+        help=(
+            &#34;Select a folder for storing saved files if different &#34;
+            &#34;from the folder where the script is exectuted&#34;
+        ),
+    )
+    parser.add_argument(
+        &#34;-n&#34;,
+        &#34;--steps&#34;,
+        type=int,
+        default=0,
+        help=(&#34;Scan discretely through the current laser span in &lt;STEPS&gt;&#34;),
+    )
     args = parser.parse_args()
     ip = args.ip if args.ip else IP
     with DLCcontrol(ip) as dlc:
         if args.emission:
             dlc.verbose_emission_status()
         if args.parameters:
-            params = dlc.get_all_parameters(verbose=True)
+            dlc.get_all_parameters(verbose=True)
         if args.fname is not None:
-            dlc.save_parameters(args.folder+args.fname)
+            dlc.save_parameters(args.folder + args.fname)
         if args.steps:
             step_through_scan_range(ip, args.steps, dlc)
 
@@ -798,6 +1001,10 @@ if __name__ == &#34;__main__&#34;:
 <dt id="dlccontrol.IP"><code class="name">var <span class="ident">IP</span></code></dt>
 <dd>
 <div class="desc"><p>The default IP when initialising a <code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code></p></div>
+</dd>
+<dt id="dlccontrol.MAINTENANCE_PSW"><code class="name">var <span class="ident">MAINTENANCE_PSW</span></code></dt>
+<dd>
+<div class="desc"><p>Factory default password for maintenance mode user level</p></div>
 </dd>
 </dl>
 </section>
@@ -817,38 +1024,68 @@ the options</p></div>
 <pre><code class="python">def command_line_programme():
     &#34;&#34;&#34;Command line use of the module: run ``python dlccontrol.py -h`` to see
     the options&#34;&#34;&#34;
-    parser = argparse.ArgumentParser(description=&#39;A few useful laser control funtions&#39;)
-    parser.add_argument(&#39;-i&#39;, &#39;--ip&#39;, type=str, default=&#34;&#34;,
-                        help=f&#34;The ip of the laser (defaults to {IP})&#34;)
-    parser.add_argument(&#39;-e&#39;, &#39;--emission-status&#39;, dest=&#39;emission&#39;, action=&#39;store_true&#39;,
-                        help=&#34;Print the emission status of the device&#34;)
-    parser.add_argument(&#39;-p&#39;, &#39;--parameters&#39;, action=&#39;store_true&#39;,
-                            help=&#34;Print the laser parameters&#34;)
-    parser.add_argument(&#39;-s&#39;, &#39;--save-filename&#39;, dest=&#39;fname&#39;, type=str, default=None,
-                        help=(&#34;Save all laser parameters to a json file to filename&#34;))
-    parser.add_argument(&#39;-f&#39;, &#39;--folder&#39;, type=str, default=&#34;./&#34;,
-                        help=(&#34;Select a folder for storing saved files if different &#34;
-                                  &#34;from the folder where the script is exectuted&#34;))
-    parser.add_argument(&#39;-n&#39;, &#39;--steps&#39;, type=int, default=0,
-                        help=(&#34;Scan discretely through the current laser span in &lt;STEPS&gt;&#34;))
+    parser = argparse.ArgumentParser(description=&#34;A few useful laser control funtions&#34;)
+    parser.add_argument(
+        &#34;-i&#34;,
+        &#34;--ip&#34;,
+        type=str,
+        default=&#34;&#34;,
+        help=f&#34;The ip of the laser (defaults to {IP})&#34;,
+    )
+    parser.add_argument(
+        &#34;-e&#34;,
+        &#34;--emission-status&#34;,
+        dest=&#34;emission&#34;,
+        action=&#34;store_true&#34;,
+        help=&#34;Print the emission status of the device&#34;,
+    )
+    parser.add_argument(
+        &#34;-p&#34;, &#34;--parameters&#34;, action=&#34;store_true&#34;, help=&#34;Print the laser parameters&#34;
+    )
+    parser.add_argument(
+        &#34;-s&#34;,
+        &#34;--save-filename&#34;,
+        dest=&#34;fname&#34;,
+        type=str,
+        default=None,
+        help=(&#34;Save all laser parameters to a json file to filename&#34;),
+    )
+    parser.add_argument(
+        &#34;-f&#34;,
+        &#34;--folder&#34;,
+        type=str,
+        default=&#34;./&#34;,
+        help=(
+            &#34;Select a folder for storing saved files if different &#34;
+            &#34;from the folder where the script is exectuted&#34;
+        ),
+    )
+    parser.add_argument(
+        &#34;-n&#34;,
+        &#34;--steps&#34;,
+        type=int,
+        default=0,
+        help=(&#34;Scan discretely through the current laser span in &lt;STEPS&gt;&#34;),
+    )
     args = parser.parse_args()
     ip = args.ip if args.ip else IP
     with DLCcontrol(ip) as dlc:
         if args.emission:
             dlc.verbose_emission_status()
         if args.parameters:
-            params = dlc.get_all_parameters(verbose=True)
+            dlc.get_all_parameters(verbose=True)
         if args.fname is not None:
-            dlc.save_parameters(args.folder+args.fname)
+            dlc.save_parameters(args.folder + args.fname)
         if args.steps:
             step_through_scan_range(ip, args.steps, dlc)</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.freq_per_sec"><code class="name flex">
-<span>def <span class="ident">freq_per_sec</span></span>(<span>scan_freq, peak_to_peak, scaling, calibration)</span>
+<span>def <span class="ident">freq_per_sec</span></span>(<span>scan_freq: float, peak_to_peak: float, scaling: float, calibration: float) ‑> float</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Calculate frequency sweep per second for the laser in MHz per second</p>
+<div class="desc"><p>Calculate frequency sweep per second for the laser in MHz per second
+when using a triangular sweep function</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>scan_freq</code></strong> :&ensp;<code>float</code></dt>
@@ -864,8 +1101,11 @@ the options</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def freq_per_sec(scan_freq, peak_to_peak, scaling, calibration):
+<pre><code class="python">def freq_per_sec(
+    scan_freq: float, peak_to_peak: float, scaling: float, calibration: float
+) -&gt; float:
     &#34;&#34;&#34;Calculate frequency sweep per second for the laser in MHz per second
+    when using a triangular sweep function
 
     Parameters
     ----------
@@ -878,15 +1118,15 @@ the options</p></div>
     calibration : float
         [MHz/mA or MHz/V]
     &#34;&#34;&#34;
-    scan_period = 1/(2*scan_freq) #sec
+    scan_period = 1 / (2 * scan_freq)  # sec
     # (division by two because of triangle wave and hence in practice
     #  sweeping double the speed)
-    current_span = peak_to_peak*scaling #mA
-    return current_span*calibration/scan_period #MHz/second</code></pre>
+    scaled_ptp = peak_to_peak * scaling  # mA or V
+    return scaled_ptp * calibration / scan_period  # MHz/second</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.freq_per_sec_from_params"><code class="name flex">
-<span>def <span class="ident">freq_per_sec_from_params</span></span>(<span>params, calibration)</span>
+<span>def <span class="ident">freq_per_sec_from_params</span></span>(<span>params: dict, calibration: float) ‑> float</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Calculate frequency sweep per second for the laser in MHz per second due
@@ -902,7 +1142,7 @@ to the internal scan using a params dictionary</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def freq_per_sec_from_params(params, calibration):
+<pre><code class="python">def freq_per_sec_from_params(params: dict, calibration: float) -&gt; float:
     &#34;&#34;&#34;Calculate frequency sweep per second for the laser in MHz per second due
     to the internal scan using a params dictionary
 
@@ -919,7 +1159,7 @@ to the internal scan using a params dictionary</p>
 </details>
 </dd>
 <dt id="dlccontrol.step_through_scan_range"><code class="name flex">
-<span>def <span class="ident">step_through_scan_range</span></span>(<span>ip='169.254.99.22', steps=20, dlc=None)</span>
+<span>def <span class="ident">step_through_scan_range</span></span>(<span>ip='0.0.0.0', steps: int = 20, dlc: <a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a> = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A simple programme: Step through the internal voltage/current
@@ -937,7 +1177,7 @@ scan range currently in use</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def step_through_scan_range(ip=IP, steps=20, dlc=None):
+<pre><code class="python">def step_through_scan_range(ip=IP, steps: int = 20, dlc: DLCcontrol = None):
     &#34;&#34;&#34;A simple programme: Step through the internal voltage/current
     scan range currently in use
 
@@ -960,16 +1200,16 @@ scan range currently in use</p>
     initial_offset = dlc.scan_offset
     initial_amplitude = dlc.scan_amplitude
     # Define range to scan
-    range = np.linspace(0, -initial_amplitude, steps)
+    step_range = np.linspace(0, -initial_amplitude, steps)
     try:
         dlc.scan_amplitude = 0
-        for i, change in enumerate(range):
+        for i, change in enumerate(step_range):
             try:
                 print(f&#34;{i}: change to {initial_end+change:.3f}V&#34;)
                 try:
                     dlc.scan_offset = initial_end + change
-                except dlc.OutOfRangeError as e:
-                    print(e)
+                except dlc.OutOfRangeError as err:
+                    print(err)
                     break
                 time.sleep(1)
             except KeyboardInterrupt:
@@ -990,7 +1230,7 @@ scan range currently in use</p>
 <dl>
 <dt id="dlccontrol.DLCcontrol"><code class="flex name class">
 <span>class <span class="ident">DLCcontrol</span></span>
-<span>(</span><span>ip='169.254.99.22', open_on_init=True, **kwargs)</span>
+<span>(</span><span>ip='0.0.0.0', open_on_init=True, wl_setting_present=None, temp_setting_present=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Control a Toptica DLC over an Ethernet connection</p>
@@ -1001,6 +1241,10 @@ scan range currently in use</p>
 <dt><strong><code>open_on_init</code></strong> :&ensp;<code>bool</code>, default <code>True</code></dt>
 <dd>Decide if <code>open()</code> should be called during the initialisation of
 the class object</dd>
+<dt><strong><code>wl_setting_present</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
+<dd>Use <code>True</code> if the wavelength of the laser can be set</dd>
+<dt><strong><code>temp_setting_present</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
+<dd>Use <code>True</code> if the temperature of the laser diode can be set</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -1016,7 +1260,15 @@ the class object</dd>
     open_on_init : bool, default ``True``
         Decide if ``open()`` should be called during the initialisation of
         the class object
+    wl_setting_present : bool, default ``False``
+        Use ``True`` if the wavelength of the laser can be set
+    temp_setting_present : bool, default ``False``
+        Use ``True`` if the temperature of the laser diode can be set
     &#34;&#34;&#34;
+
+    _ip = IP
+    _service_psw = &#34;look in datasheet&#34;
+    &#34;&#34;&#34;Custom SERVICE user level password unique to the DLCpro&#34;&#34;&#34;
     _is_open = False
     _remote_parameters = None
     _scan_parameters = None
@@ -1025,10 +1277,28 @@ the class object</dd>
     &#34;&#34;&#34;MHz/mA or MHz/V calibration for the internal scan. Set by calling the
     ``freq_per_sec_internal_scan()`` method. After being set, the calibration
     will be kept in memory for future calls&#34;&#34;&#34;
+    wl_setting_present = False
+    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a wavelength setpoint&#34;&#34;&#34;
+    temp_setting_present = False
+    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a temperature setpoint&#34;&#34;&#34;
 
-    def __init__(self, ip=IP, open_on_init=True, **kwargs):
-        self.connection = toptica.NetworkConnection(ip)
-        self.dlc = toptica.DLCpro(self.connection)
+    def __init__(
+        self,
+        ip=IP,
+        open_on_init=True,
+        wl_setting_present=None,
+        temp_setting_present=None,
+        **kwargs,
+    ):
+        if wl_setting_present is not None:
+            self.wl_setting_present = wl_setting_present
+        if temp_setting_present is not None:
+            self.temp_setting_present = temp_setting_present
+        if ip is not None:
+            self._ip = ip
+        self.connection = dlcsdk.NetworkConnection(self._ip)
+        self.client = client.Client(self.connection)
+        self.dlc = dlcsdk.DLCpro(self.connection)
         if open_on_init:
             self.open()
 
@@ -1047,7 +1317,6 @@ the class object</dd>
         self.get_limits_from_dlc()
         self.get_scan_parameters()
         self.get_remote_parameters()
-        self._define_internal_shorthands()
         self._update_scan_range_attribute()
 
     def close(self):
@@ -1055,7 +1324,32 @@ the class object</dd>
         if self._is_open:
             self.dlc.close()
 
-    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    def set_user_level(self, level: int, password: str = &#34;default&#34;, verbose=True):
+        &#34;&#34;&#34;Sets the user level privileges of the client *connection*, does not change
+        the user level on the DLCpro console&#34;&#34;&#34;
+        if password == &#34;default&#34;:
+            if level == 1:
+                print(
+                    &#34;CAUTION: This is SERVICE level user, protected by a custom password for each unit.&#34;
+                )
+                inp = input(&#34;Do you really really want to proceed? [y/N] &#34;)
+                if inp.lower() != &#34;y&#34;:
+                    print(&#34;Aborting user level change&#34;)
+                    return
+                password = self._service_psw
+            elif level == 2:
+                password = MAINTENANCE_PSW
+        ul = decop.UserLevel(level)
+        result = self.dlc.change_ul(ul, password)
+        if verbose:
+            print(f&#34;New user level: {result.name}&#34;)
+
+    def get_user_level(self) -&gt; decop.UserLevel:
+        &#34;&#34;&#34;Gets the user level privileges of the *connection*, does not reflect the
+        user level on the DLCpro console&#34;&#34;&#34;
+        return decop.UserLevel(self.client.get(&#34;ul&#34;))
+
+    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     def get_limits_from_dlc(self, verbose=False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the wavelength, piezo voltage, current and
@@ -1066,31 +1360,37 @@ the class object</dd>
         self._lims : dict
             The limits
         &#34;&#34;&#34;
-        self._lims = {&#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
-                      &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
-                      &#34;vmin&#34;:  self.dlc.laser1.dl.pc.voltage_min.get(),
-                      &#34;vmax&#34;:  self.dlc.laser1.dl.pc.voltage_max.get(),
-                      &#34;cmin&#34;:  60.0, # lasing threshold
-                      &#34;cmax&#34;:  300.0,
-                      &#34;fmin&#34;:  0.02,
-                      &#34;fmax&#34;:  400} # cannot find max in manual
+        self._lims = {
+            &#34;vmin&#34;: self.dlc.laser1.dl.pc.voltage_min.get(),
+            &#34;vmax&#34;: self.dlc.laser1.dl.pc.voltage_max.get(),
+            &#34;cmin&#34;: 0.0,
+            &#34;cmax&#34;: self.dlc.laser1.dl.cc.current_clip.get(),
+            &#34;fmin&#34;: 0.02,
+            &#34;fmax&#34;: 400,  # cannot find max in manual
+            &#34;tmin&#34;: None,
+            &#34;tmax&#34;: None,
+            &#34;wlmin&#34;: None,
+            &#34;wlmax&#34;: None,
+        }
+        if self.wl_setting_present:
+            self._lims.update(
+                {
+                    &#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
+                    &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
+                }
+            )
+        if self.temp_setting_present:
+            self._lims.update(
+                {
+                    &#34;tmin&#34;: self.dlc.laser1.dl.tc.temp_set_min.get(),
+                    &#34;tmax&#34;: self.dlc.laser1.dl.tc.temp_set_max.get(),
+                }
+            )
         if verbose:
             _print_dict(self._lims)
         return self._lims
 
-    def _check_value(self, val: float, parameter_name: str, permitted_range: list):
-        &#34;&#34;&#34;Check that a value is within a given range, raise error if not
-
-        Raises
-        ------
-        OutOfRangeError
-            If ``val`` is not within the two values of the ``permitted_range``
-            list
-        &#34;&#34;&#34;
-        if not permitted_range[0] &lt;= val &lt;= permitted_range[1]:
-            raise OutOfRangeError(val, parameter_name, permitted_range)
-
-    def get_scan_parameters(self, verbose=False) -&gt; dict:
+    def get_scan_parameters(self, verbose: bool = False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the current scan settings, populate the
         ``_scan_parameters`` dict attribute
 
@@ -1099,23 +1399,36 @@ the class object</dd>
         self._scan_parameters : dict
             All parameters for the internal scan
         &#34;&#34;&#34;
-        self._scan_parameters = {&#34;enabled&#34;:        self.scan_enabled,
-                                 &#34;output channel&#34;: self.scan_output_channel,
-                                 &#34;frequency&#34;:      self.scan_frequency,
-                                 &#34;amplitude&#34;:      self.scan_amplitude,
-                                 &#34;offset&#34;:         self.scan_offset,
-                                 &#34;start&#34;:          self.scan_start,
-                                 &#34;end&#34;:            self.scan_end}
+        self._scan_parameters = {
+            &#34;enabled&#34;: self.scan_enabled,
+            &#34;output channel&#34;: self.scan_output_channel,
+            &#34;frequency&#34;: self.scan_frequency,
+            &#34;amplitude&#34;: self.scan_amplitude,
+            &#34;offset&#34;: self.scan_offset,
+            &#34;start&#34;: self.scan_start,
+            &#34;end&#34;: self.scan_end,
+        }
         if verbose:
             _print_dict(self._scan_parameters)
         return self._scan_parameters
 
-    def _define_internal_shorthands(self):
-        &#34;&#34;&#34;Set these attributes as shorthands&#34;&#34;&#34;
-        self._vrange = [self._lims[&#34;vmin&#34;], self._lims[&#34;vmax&#34;]]
-        self._crange = [self._lims[&#34;cmin&#34;], self._lims[&#34;cmax&#34;]]
+    @property
+    def _vrange(self):
+        return self._lims[&#34;vmin&#34;], self._lims[&#34;vmax&#34;]
 
-    def _update_scan_range_attribute(self, channel=None):
+    @property
+    def _crange(self):
+        return self._lims[&#34;cmin&#34;], self._lims[&#34;cmax&#34;]
+
+    @property
+    def _trange(self):
+        return self._lims[&#34;tmin&#34;], self._lims[&#34;tmax&#34;]
+
+    @property
+    def _wlrange(self):
+        return self._lims[&#34;wlmin&#34;], self._lims[&#34;wlmax&#34;]
+
+    def _update_scan_range_attribute(self, channel: Union[None, OutputChannel] = None):
         if channel is None:
             channel = self._scan_parameters[&#34;output channel&#34;]
         if channel == OutputChannel.CC:
@@ -1126,7 +1439,7 @@ the class object</dd>
             self._scan_range = [-np.inf, np.inf]
             print(&#34;(!) Warning: Scan range for OutA and OutB is not limted&#34;, flush=True)
 
-    def get_remote_parameters(self, verbose=False):
+    def get_remote_parameters(self, verbose: bool = False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the analogue remote control settings, and
         populate the ``_remote_parameters`` dict attribute
 
@@ -1138,14 +1451,16 @@ the class object</dd>
         self._remote_parameters = {}
         for unit in (&#34;cc&#34;, &#34;pc&#34;):
             self.remote_select = unit
-            self._remote_parameters[unit] = {&#34;enabled&#34;: self.remote_enabled,
-                                             &#34;factor&#34;: self.remote_factor,
-                                             &#34;signal&#34;: self.remote_signal}
+            self._remote_parameters[unit] = {
+                &#34;enabled&#34;: self.remote_enabled,
+                &#34;factor&#34;: self.remote_factor,
+                &#34;signal&#34;: self.remote_signal,
+            }
         if verbose:
             _print_dict(self._remote_parameters)
         return self._remote_parameters
 
-    def get_all_parameters(self, verbose=False) -&gt; dict:
+    def get_all_parameters(self, verbose: bool = False) -&gt; dict:
         &#34;&#34;&#34;Returns an updated dictionary of all the parameters that can be set
         with the module
 
@@ -1154,11 +1469,18 @@ the class object</dd>
         dict
             A nested dictionary with the parameters
         &#34;&#34;&#34;
-        wls = {&#34;wl setpoint&#34;: self.wavelength_setpoint,
-               &#34;wl actual&#34;: self.wavelength_actual}
-        params = {&#34;scan&#34;:            self.get_scan_parameters(), # updating scan parameters as they are interdependent
-                  &#34;analogue remote&#34;: self._remote_parameters,
-                  &#34;wavelength&#34;:      wls}
+        wls = {
+            &#34;wl setpoint&#34;: self.wavelength_setpoint,
+            &#34;wl actual&#34;: self.wavelength_actual,
+        }
+        temps = {&#34;temp setpoint&#34;: self.temp_setpoint, &#34;temp actual&#34;: self.temp_actual}
+        # Updating scan parameters as they are interdependent
+        params = {
+            &#34;scan&#34;: self.get_scan_parameters(),
+            &#34;analogue remote&#34;: self._remote_parameters,
+            &#34;wavelength&#34;: wls,
+            &#34;temperature&#34;: temps,
+        }
         if verbose:
             _print_dict(params)
         return params
@@ -1172,17 +1494,17 @@ the class object</dd>
             If a file with name `fname` already exists
         &#34;&#34;&#34;
         params = self.get_all_parameters()
-        if not fname[-4:] == &#34;.json&#34;:
+        if not fname.endswith(&#34;.json&#34;):
             fname += &#34;.json&#34;
         if os.path.exists(fname):
             raise RuntimeError(f&#34;File &#39;{fname}&#39; already exists&#34;)
-        with open(fname, &#39;w&#39;) as outfile:
-            json.dump(params, outfile)
+        with open(fname, &#34;w&#34;) as outfile:
+            json.dump(params, outfile, indent=&#34;  &#34;)
 
     @staticmethod
-    def read_parameters(fname: str, verbose=True) -&gt; dict:
+    def read_parameters(fname: str, verbose: bool = True) -&gt; dict:
         &#34;&#34;&#34;Read (but not set!) parameters from json file&#34;&#34;&#34;
-        if not fname[-4:] == &#34;.json&#34;:
+        if not fname.endswith(&#34;.json&#34;):
             fname += &#34;.json&#34;
         with open(fname) as json_file:
             params = json.load(json_file)
@@ -1209,7 +1531,7 @@ the class object</dd>
         print(f&#34;Laser current is {_ENABLED_DISABLED[self.current_enabled]}&#34;)
         print(f&#34;Therefore, emission is {_ON_OFF[self.emission]}&#34;)
 
-    def freq_per_sec_internal_scan(self, calibration=None):
+    def freq_per_sec_internal_scan(self, calibration: float = None) -&gt; float:
         &#34;&#34;&#34;Calculate frequency span per second for the laser in MHz per second
         from the scan parameters
 
@@ -1223,9 +1545,11 @@ the class object</dd>
         peak_to_peak = params[&#34;amplitude&#34;]
         if calibration is not None:
             self.calibration = calibration
-        return freq_per_sec(scan_freq, peak_to_peak, scaling=1, calibration=self.calibration)
+        return freq_per_sec(
+            scan_freq, peak_to_peak, scaling=1, calibration=self.calibration
+        )
 
-    ## Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def emission(self) -&gt; bool:
@@ -1250,28 +1574,70 @@ the class object</dd>
             print(&#34;(!) Emission button on DLC not enabled, so cannot enable emission&#34;)
         self.dlc.laser1.dl.cc.enabled.set(val)
 
-    ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def wavelength_actual(self) -&gt; float:
         &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
+        if not self.wl_setting_present:
+            return None
         return self.dlc.laser1.ctl.wavelength_act.get()
 
     @property
     def wavelength_setpoint(self) -&gt; float:
         &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
+        if not self.wl_setting_present:
+            return None
         return self.dlc.laser1.ctl.wavelength_set.get()
 
     @wavelength_setpoint.setter
     def wavelength_setpoint(self, val: float):
+        if not self.wl_setting_present:
+            raise RuntimeError(
+                &#34;Cannot set wavelength when `wl_setting_present` is False&#34;
+            )
+        if val is None:
+            return
         val = float(val)
-        self._check_value(val, &#34;wavelength setpoint&#34;, [self._lims[&#34;wlmin&#34;], self._lims[&#34;wlmax&#34;]])
+        if self._wlrange[0] is None:
+            self.get_limits_from_dlc()
+        _check_value(val, &#34;wavelength setpoint&#34;, self._wlrange)
         self.dlc.laser1.ctl.wavelength_set.set(val)
 
-    ## Remote properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    ## Temperature properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
-    def remote_select(self) -&gt; tuple:
+    def temp_actual(self) -&gt; float:
+        &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
+        if not self.temp_setting_present:
+            return None
+        return self.dlc.laser1.dl.tc.temp_act.get()
+
+    @property
+    def temp_setpoint(self) -&gt; float:
+        &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
+        if not self.temp_setting_present:
+            return None
+        return self.dlc.laser1.dl.tc.temp_set.get()
+
+    @temp_setpoint.setter
+    def temp_setpoint(self, val: float):
+        if not self.temp_setting_present:
+            raise RuntimeError(
+                &#34;Cannot set diode temperature `temp_setting_present` is False&#34;
+            )
+        if val is None:
+            return
+        val = float(val)
+        if self._trange[0] is None:
+            self.get_limits_from_dlc()
+        _check_value(val, &#34;temperature setpoint&#34;, self._trange)
+        self.dlc.laser1.dl.tc.temp_set.set(val)
+
+    # Remote properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+
+    @property
+    def remote_select(self) -&gt; Tuple[str, Any]:
         &#34;&#34;&#34;Analogue Remote Control for both the DLCpro&#39;s current (cc)
         and voltage (pc) can be used simultaneously. With this class, both can
         be used simultaneously, with this select property choosing which remote
@@ -1308,7 +1674,9 @@ the class object</dd>
             self._remote_str = &#34;pc&#34;
             self._remote_unit = self.dlc.laser1.dl.pc.external_input
         else:
-            raise ValueError(f&#34;select must be either &#39;pc&#39; nor &#39;cc&#39; (tried using &#39;{select}&#39;)&#34;)
+            raise ValueError(
+                f&#34;select must be either &#39;pc&#39; nor &#39;cc&#39; (tried using &#39;{select}&#39;)&#34;
+            )
 
     @property
     def remote_enabled(self) -&gt; bool:
@@ -1327,7 +1695,7 @@ the class object</dd>
         return InputChannel(num)
 
     @remote_signal.setter
-    def remote_signal(self, val: InputChannel):
+    def remote_signal(self, val: Union[InputChannel, str]):
         &#34;&#34;&#34;Choose which output channel to use for the ARC
         val : {&#34;Fine1&#34;, &#34;Fine2&#34;, &#34;Fast3&#34;, &#34;Fast4&#34;,
                InputChannel.Fine1, InputChannel.Fine2,
@@ -1340,8 +1708,10 @@ the class object</dd>
             else:
                 raise KeyError
         except KeyError:
-            raise ValueError( &#34;Input channel must be one of &#39;Fine1&#39;, &#39;Fine2&#39;, &#34;
-                             f&#34;&#39;Fast3&#39;, &#39;Fast4&#39;, or an InputChannel (tried with &#39;{val}&#39;)&#34;)
+            raise ValueError(
+                &#34;Input channel must be one of &#39;Fine1&#39;, &#39;Fine2&#39;, &#34;
+                f&#34;&#39;Fast3&#39;, &#39;Fast4&#39;, or an InputChannel (tried with &#39;{val}&#39;)&#34;
+            ) from KeyError
         self._remote_unit.signal.set(num)
         self._remote_parameters[self._remote_str][&#34;signal&#34;] = InputChannel(num)
 
@@ -1357,7 +1727,7 @@ the class object</dd>
         self._remote_unit.factor.set(val)
         self._remote_parameters[self._remote_str][&#34;factor&#34;] = val
 
-    ## Scan properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Scan properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def scan_enabled(self) -&gt; bool:
@@ -1377,7 +1747,7 @@ the class object</dd>
         return OutputChannel(num)
 
     @scan_output_channel.setter
-    def scan_output_channel(self, val):
+    def scan_output_channel(self, val: Union[OutputChannel, str]):
         &#34;&#34;&#34;The internal scan can only act on eiter piezo or the current at any
         given time, or be directed to the DLC BNCs
         val : {&#34;CC&#34;, &#34;PC&#34;, OutputChannel.CC, OutputChannel.PC}&#34;&#34;&#34;
@@ -1389,8 +1759,10 @@ the class object</dd>
             else:
                 raise KeyError
         except KeyError:
-            raise ValueError( &#34;Channel must be &#39;CC&#39;, &#39;PC&#39;, OutputChannel.CC, or &#34;
-                             f&#34;OutputChannel.PC (tried with &#39;{val}&#39;)&#34;)
+            raise ValueError(
+                &#34;Channel must be &#39;CC&#39;, &#39;PC&#39;, OutputChannel.CC, or &#34;
+                f&#34;OutputChannel.PC (tried with &#39;{val}&#39;)&#34;
+            ) from KeyError
         self.dlc.laser1.scan.output_channel.set(num)
         self._scan_parameters[&#34;scan_output_channel&#34;] = OutputChannel(num)
         self._update_scan_range_attribute(OutputChannel(num))
@@ -1403,7 +1775,7 @@ the class object</dd>
     @scan_frequency.setter
     def scan_frequency(self, val: float):
         val = float(val)
-        self._check_value(val, &#34;scan frequency&#34;, (self._lims[&#34;fmin&#34;], self._lims[&#34;fmax&#34;]))
+        _check_value(val, &#34;scan frequency&#34;, (self._lims[&#34;fmin&#34;], self._lims[&#34;fmax&#34;]))
         self.dlc.laser1.scan.frequency.set(val)
         self._scan_parameters[&#34;frequency&#34;] = val
 
@@ -1416,7 +1788,7 @@ the class object</dd>
     def scan_amplitude(self, val: float):
         val = float(val)
         offset = self.scan_offset
-        new_range = [offset-val/2, offset+val/2]
+        new_range = [offset - val / 2, offset + val / 2]
         if min(new_range) &lt; self._scan_range[0] or max(new_range) &gt; self._scan_range[1]:
             raise OutOfRangeError(new_range, &#34;scan&#34;, self._scan_range)
         self.dlc.laser1.scan.amplitude.set(val)
@@ -1431,7 +1803,7 @@ the class object</dd>
     def scan_offset(self, val: float):
         val = float(val)
         amplitude = self.scan_amplitude
-        new_range = [val-amplitude/2, val+amplitude/2]
+        new_range = [val - amplitude / 2, val + amplitude / 2]
         if min(new_range) &lt; self._scan_range[0] or max(new_range) &gt; self._scan_range[1]:
             raise OutOfRangeError(new_range, &#34;scan&#34;, self._scan_range)
         self.dlc.laser1.scan.offset.set(val)
@@ -1445,7 +1817,7 @@ the class object</dd>
     @scan_start.setter
     def scan_start(self, val: float):
         val = float(val)
-        self._check_value(val, &#34;scan start&#34;, self._scan_range)
+        _check_value(val, &#34;scan start&#34;, self._scan_range)
         self.dlc.laser1.scan.start.set(val)
         self._scan_parameters[&#34;start&#34;] = val
 
@@ -1457,7 +1829,7 @@ the class object</dd>
     @scan_end.setter
     def scan_end(self, val: float):
         val = float(val)
-        self._check_value(val, &#34;scan end&#34;, self._scan_range)
+        _check_value(val, &#34;scan end&#34;, self._scan_range)
         self.dlc.laser1.scan.end.set(val)
         self._scan_parameters[&#34;end&#34;] = val</code></pre>
 </details>
@@ -1469,11 +1841,19 @@ the class object</dd>
 <code>freq_per_sec_internal_scan()</code> method. After being set, the calibration
 will be kept in memory for future calls</p></div>
 </dd>
+<dt id="dlccontrol.DLCcontrol.temp_setting_present"><code class="name">var <span class="ident">temp_setting_present</span></code></dt>
+<dd>
+<div class="desc"><p>Tells the wrapper whether the laser is controlled with a temperature setpoint</p></div>
+</dd>
+<dt id="dlccontrol.DLCcontrol.wl_setting_present"><code class="name">var <span class="ident">wl_setting_present</span></code></dt>
+<dd>
+<div class="desc"><p>Tells the wrapper whether the laser is controlled with a wavelength setpoint</p></div>
+</dd>
 </dl>
 <h3>Static methods</h3>
 <dl>
 <dt id="dlccontrol.DLCcontrol.read_parameters"><code class="name flex">
-<span>def <span class="ident">read_parameters</span></span>(<span>fname: str, verbose=True) ‑> dict</span>
+<span>def <span class="ident">read_parameters</span></span>(<span>fname: str, verbose: bool = True) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Read (but not set!) parameters from json file</p></div>
@@ -1482,9 +1862,9 @@ will be kept in memory for future calls</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def read_parameters(fname: str, verbose=True) -&gt; dict:
+def read_parameters(fname: str, verbose: bool = True) -&gt; dict:
     &#34;&#34;&#34;Read (but not set!) parameters from json file&#34;&#34;&#34;
-    if not fname[-4:] == &#34;.json&#34;:
+    if not fname.endswith(&#34;.json&#34;):
         fname += &#34;.json&#34;
     with open(fname) as json_file:
         params = json.load(json_file)
@@ -1563,7 +1943,7 @@ def remote_factor(self) -&gt; float:
     return self._remote_unit.factor.get()</code></pre>
 </details>
 </dd>
-<dt id="dlccontrol.DLCcontrol.remote_select"><code class="name">var <span class="ident">remote_select</span> : tuple</code></dt>
+<dt id="dlccontrol.DLCcontrol.remote_select"><code class="name">var <span class="ident">remote_select</span> : Tuple[str, Any]</code></dt>
 <dd>
 <div class="desc"><p>Analogue Remote Control for both the DLCpro's current (cc)
 and voltage (pc) can be used simultaneously. With this class, both can
@@ -1588,7 +1968,7 @@ is receiveing the commands at any given time</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
-def remote_select(self) -&gt; tuple:
+def remote_select(self) -&gt; Tuple[str, Any]:
     &#34;&#34;&#34;Analogue Remote Control for both the DLCpro&#39;s current (cc)
     and voltage (pc) can be used simultaneously. With this class, both can
     be used simultaneously, with this select property choosing which remote
@@ -1722,6 +2102,36 @@ def scan_start(self) -&gt; float:
     return self.dlc.laser1.scan.start.get()</code></pre>
 </details>
 </dd>
+<dt id="dlccontrol.DLCcontrol.temp_actual"><code class="name">var <span class="ident">temp_actual</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The actual wavelength of the laser (read only)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def temp_actual(self) -&gt; float:
+    &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
+    if not self.temp_setting_present:
+        return None
+    return self.dlc.laser1.dl.tc.temp_act.get()</code></pre>
+</details>
+</dd>
+<dt id="dlccontrol.DLCcontrol.temp_setpoint"><code class="name">var <span class="ident">temp_setpoint</span> : float</code></dt>
+<dd>
+<div class="desc"><p>The setpont of the laser wavelength</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def temp_setpoint(self) -&gt; float:
+    &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
+    if not self.temp_setting_present:
+        return None
+    return self.dlc.laser1.dl.tc.temp_set.get()</code></pre>
+</details>
+</dd>
 <dt id="dlccontrol.DLCcontrol.wavelength_actual"><code class="name">var <span class="ident">wavelength_actual</span> : float</code></dt>
 <dd>
 <div class="desc"><p>The actual wavelength of the laser (read only)</p></div>
@@ -1732,6 +2142,8 @@ def scan_start(self) -&gt; float:
 <pre><code class="python">@property
 def wavelength_actual(self) -&gt; float:
     &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
+    if not self.wl_setting_present:
+        return None
     return self.dlc.laser1.ctl.wavelength_act.get()</code></pre>
 </details>
 </dd>
@@ -1745,6 +2157,8 @@ def wavelength_actual(self) -&gt; float:
 <pre><code class="python">@property
 def wavelength_setpoint(self) -&gt; float:
     &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
+    if not self.wl_setting_present:
+        return None
     return self.dlc.laser1.ctl.wavelength_set.get()</code></pre>
 </details>
 </dd>
@@ -1767,7 +2181,7 @@ def wavelength_setpoint(self) -&gt; float:
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.freq_per_sec_internal_scan"><code class="name flex">
-<span>def <span class="ident">freq_per_sec_internal_scan</span></span>(<span>self, calibration=None)</span>
+<span>def <span class="ident">freq_per_sec_internal_scan</span></span>(<span>self, calibration: float = None) ‑> float</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Calculate frequency span per second for the laser in MHz per second
@@ -1781,7 +2195,7 @@ from the scan parameters</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def freq_per_sec_internal_scan(self, calibration=None):
+<pre><code class="python">def freq_per_sec_internal_scan(self, calibration: float = None) -&gt; float:
     &#34;&#34;&#34;Calculate frequency span per second for the laser in MHz per second
     from the scan parameters
 
@@ -1795,11 +2209,13 @@ from the scan parameters</p>
     peak_to_peak = params[&#34;amplitude&#34;]
     if calibration is not None:
         self.calibration = calibration
-    return freq_per_sec(scan_freq, peak_to_peak, scaling=1, calibration=self.calibration)</code></pre>
+    return freq_per_sec(
+        scan_freq, peak_to_peak, scaling=1, calibration=self.calibration
+    )</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.get_all_parameters"><code class="name flex">
-<span>def <span class="ident">get_all_parameters</span></span>(<span>self, verbose=False) ‑> dict</span>
+<span>def <span class="ident">get_all_parameters</span></span>(<span>self, verbose: bool = False) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Returns an updated dictionary of all the parameters that can be set
@@ -1813,7 +2229,7 @@ with the module</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_all_parameters(self, verbose=False) -&gt; dict:
+<pre><code class="python">def get_all_parameters(self, verbose: bool = False) -&gt; dict:
     &#34;&#34;&#34;Returns an updated dictionary of all the parameters that can be set
     with the module
 
@@ -1822,11 +2238,18 @@ with the module</p>
     dict
         A nested dictionary with the parameters
     &#34;&#34;&#34;
-    wls = {&#34;wl setpoint&#34;: self.wavelength_setpoint,
-           &#34;wl actual&#34;: self.wavelength_actual}
-    params = {&#34;scan&#34;:            self.get_scan_parameters(), # updating scan parameters as they are interdependent
-              &#34;analogue remote&#34;: self._remote_parameters,
-              &#34;wavelength&#34;:      wls}
+    wls = {
+        &#34;wl setpoint&#34;: self.wavelength_setpoint,
+        &#34;wl actual&#34;: self.wavelength_actual,
+    }
+    temps = {&#34;temp setpoint&#34;: self.temp_setpoint, &#34;temp actual&#34;: self.temp_actual}
+    # Updating scan parameters as they are interdependent
+    params = {
+        &#34;scan&#34;: self.get_scan_parameters(),
+        &#34;analogue remote&#34;: self._remote_parameters,
+        &#34;wavelength&#34;: wls,
+        &#34;temperature&#34;: temps,
+    }
     if verbose:
         _print_dict(params)
     return params</code></pre>
@@ -1856,21 +2279,39 @@ scan frequency limits, and populate the <code>_lims</code> dict attribute</p>
     self._lims : dict
         The limits
     &#34;&#34;&#34;
-    self._lims = {&#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
-                  &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
-                  &#34;vmin&#34;:  self.dlc.laser1.dl.pc.voltage_min.get(),
-                  &#34;vmax&#34;:  self.dlc.laser1.dl.pc.voltage_max.get(),
-                  &#34;cmin&#34;:  60.0, # lasing threshold
-                  &#34;cmax&#34;:  300.0,
-                  &#34;fmin&#34;:  0.02,
-                  &#34;fmax&#34;:  400} # cannot find max in manual
+    self._lims = {
+        &#34;vmin&#34;: self.dlc.laser1.dl.pc.voltage_min.get(),
+        &#34;vmax&#34;: self.dlc.laser1.dl.pc.voltage_max.get(),
+        &#34;cmin&#34;: 0.0,
+        &#34;cmax&#34;: self.dlc.laser1.dl.cc.current_clip.get(),
+        &#34;fmin&#34;: 0.02,
+        &#34;fmax&#34;: 400,  # cannot find max in manual
+        &#34;tmin&#34;: None,
+        &#34;tmax&#34;: None,
+        &#34;wlmin&#34;: None,
+        &#34;wlmax&#34;: None,
+    }
+    if self.wl_setting_present:
+        self._lims.update(
+            {
+                &#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
+                &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
+            }
+        )
+    if self.temp_setting_present:
+        self._lims.update(
+            {
+                &#34;tmin&#34;: self.dlc.laser1.dl.tc.temp_set_min.get(),
+                &#34;tmax&#34;: self.dlc.laser1.dl.tc.temp_set_max.get(),
+            }
+        )
     if verbose:
         _print_dict(self._lims)
     return self._lims</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.get_remote_parameters"><code class="name flex">
-<span>def <span class="ident">get_remote_parameters</span></span>(<span>self, verbose=False)</span>
+<span>def <span class="ident">get_remote_parameters</span></span>(<span>self, verbose: bool = False) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Query the laser for the analogue remote control settings, and
@@ -1884,7 +2325,7 @@ populate the <code>_remote_parameters</code> dict attribute</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_remote_parameters(self, verbose=False):
+<pre><code class="python">def get_remote_parameters(self, verbose: bool = False) -&gt; dict:
     &#34;&#34;&#34;Query the laser for the analogue remote control settings, and
     populate the ``_remote_parameters`` dict attribute
 
@@ -1896,16 +2337,18 @@ populate the <code>_remote_parameters</code> dict attribute</p>
     self._remote_parameters = {}
     for unit in (&#34;cc&#34;, &#34;pc&#34;):
         self.remote_select = unit
-        self._remote_parameters[unit] = {&#34;enabled&#34;: self.remote_enabled,
-                                         &#34;factor&#34;: self.remote_factor,
-                                         &#34;signal&#34;: self.remote_signal}
+        self._remote_parameters[unit] = {
+            &#34;enabled&#34;: self.remote_enabled,
+            &#34;factor&#34;: self.remote_factor,
+            &#34;signal&#34;: self.remote_signal,
+        }
     if verbose:
         _print_dict(self._remote_parameters)
     return self._remote_parameters</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.get_scan_parameters"><code class="name flex">
-<span>def <span class="ident">get_scan_parameters</span></span>(<span>self, verbose=False) ‑> dict</span>
+<span>def <span class="ident">get_scan_parameters</span></span>(<span>self, verbose: bool = False) ‑> dict</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Query the laser for the current scan settings, populate the
@@ -1919,7 +2362,7 @@ populate the <code>_remote_parameters</code> dict attribute</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_scan_parameters(self, verbose=False) -&gt; dict:
+<pre><code class="python">def get_scan_parameters(self, verbose: bool = False) -&gt; dict:
     &#34;&#34;&#34;Query the laser for the current scan settings, populate the
     ``_scan_parameters`` dict attribute
 
@@ -1928,16 +2371,34 @@ populate the <code>_remote_parameters</code> dict attribute</p>
     self._scan_parameters : dict
         All parameters for the internal scan
     &#34;&#34;&#34;
-    self._scan_parameters = {&#34;enabled&#34;:        self.scan_enabled,
-                             &#34;output channel&#34;: self.scan_output_channel,
-                             &#34;frequency&#34;:      self.scan_frequency,
-                             &#34;amplitude&#34;:      self.scan_amplitude,
-                             &#34;offset&#34;:         self.scan_offset,
-                             &#34;start&#34;:          self.scan_start,
-                             &#34;end&#34;:            self.scan_end}
+    self._scan_parameters = {
+        &#34;enabled&#34;: self.scan_enabled,
+        &#34;output channel&#34;: self.scan_output_channel,
+        &#34;frequency&#34;: self.scan_frequency,
+        &#34;amplitude&#34;: self.scan_amplitude,
+        &#34;offset&#34;: self.scan_offset,
+        &#34;start&#34;: self.scan_start,
+        &#34;end&#34;: self.scan_end,
+    }
     if verbose:
         _print_dict(self._scan_parameters)
     return self._scan_parameters</code></pre>
+</details>
+</dd>
+<dt id="dlccontrol.DLCcontrol.get_user_level"><code class="name flex">
+<span>def <span class="ident">get_user_level</span></span>(<span>self) ‑> toptica.lasersdk.decop.UserLevel</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Gets the user level privileges of the <em>connection</em>, does not reflect the
+user level on the DLCpro console</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_user_level(self) -&gt; decop.UserLevel:
+    &#34;&#34;&#34;Gets the user level privileges of the *connection*, does not reflect the
+    user level on the DLCpro console&#34;&#34;&#34;
+    return decop.UserLevel(self.client.get(&#34;ul&#34;))</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.open"><code class="name flex">
@@ -1959,7 +2420,6 @@ laser required to use the class</p></div>
     self.get_limits_from_dlc()
     self.get_scan_parameters()
     self.get_remote_parameters()
-    self._define_internal_shorthands()
     self._update_scan_range_attribute()</code></pre>
 </details>
 </dd>
@@ -1986,12 +2446,12 @@ laser required to use the class</p></div>
         If a file with name `fname` already exists
     &#34;&#34;&#34;
     params = self.get_all_parameters()
-    if not fname[-4:] == &#34;.json&#34;:
+    if not fname.endswith(&#34;.json&#34;):
         fname += &#34;.json&#34;
     if os.path.exists(fname):
         raise RuntimeError(f&#34;File &#39;{fname}&#39; already exists&#34;)
-    with open(fname, &#39;w&#39;) as outfile:
-        json.dump(params, outfile)</code></pre>
+    with open(fname, &#34;w&#34;) as outfile:
+        json.dump(params, outfile, indent=&#34;  &#34;)</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.set_parameters"><code class="name flex">
@@ -2011,6 +2471,37 @@ accordingly</p></div>
     The idea is to be able to use the parameters in a dict and set them
     accordingly&#34;&#34;&#34;
     raise NotImplementedError(&#34;Still to be implemented&#34;)</code></pre>
+</details>
+</dd>
+<dt id="dlccontrol.DLCcontrol.set_user_level"><code class="name flex">
+<span>def <span class="ident">set_user_level</span></span>(<span>self, level: int, password: str = 'default', verbose=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sets the user level privileges of the client <em>connection</em>, does not change
+the user level on the DLCpro console</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_user_level(self, level: int, password: str = &#34;default&#34;, verbose=True):
+    &#34;&#34;&#34;Sets the user level privileges of the client *connection*, does not change
+    the user level on the DLCpro console&#34;&#34;&#34;
+    if password == &#34;default&#34;:
+        if level == 1:
+            print(
+                &#34;CAUTION: This is SERVICE level user, protected by a custom password for each unit.&#34;
+            )
+            inp = input(&#34;Do you really really want to proceed? [y/N] &#34;)
+            if inp.lower() != &#34;y&#34;:
+                print(&#34;Aborting user level change&#34;)
+                return
+            password = self._service_psw
+        elif level == 2:
+            password = MAINTENANCE_PSW
+    ul = decop.UserLevel(level)
+    result = self.dlc.change_ul(ul, password)
+    if verbose:
+        print(f&#34;New user level: {result.name}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.verbose_emission_status"><code class="name flex">
@@ -2053,6 +2544,7 @@ Therefore, emission is ON
 </summary>
 <pre><code class="python">class InputChannel(int, enum.Enum):
     &#34;&#34;&#34;Input channel name to numeric value conversion&#34;&#34;&#34;
+
     NotSelected = -3
     Fine1 = 0
     Fine2 = 1
@@ -2090,7 +2582,7 @@ Therefore, emission is ON
 </dd>
 <dt id="dlccontrol.OutOfRangeError"><code class="flex name class">
 <span>class <span class="ident">OutOfRangeError</span></span>
-<span>(</span><span>value, parameter_name: str, permitted_range: list)</span>
+<span>(</span><span>value: Any, parameter_name: str, permitted_range: List[Any])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Custom out of range errors for when a parameter is outside the permitted
@@ -2103,11 +2595,14 @@ range</p></div>
     &#34;&#34;&#34;Custom out of range errors for when a parameter is outside the permitted
     range&#34;&#34;&#34;
 
-    def __init__(self, value, parameter_name: str, permitted_range: list):
+    def __init__(self, value: Any, parameter_name: str, permitted_range: List[Any]):
         self.value = value
         self.parameter_name = parameter_name
         self.range = permitted_range
-        self.message = f&#34;{value} is not within the permitted {parameter_name} range {permitted_range}&#34;
+        self.message = (
+            f&#34;{value} is not within the permitted &#34;
+            f&#34;{parameter_name} range {permitted_range}&#34;
+        )
         super().__init__(self.message)</code></pre>
 </details>
 <h3>Ancestors</h3>
@@ -2129,6 +2624,7 @@ range</p></div>
 </summary>
 <pre><code class="python">class OutputChannel(int, enum.Enum):  # int needed to avoid custom json serialiser
     &#34;&#34;&#34;Output channel name to numeric value conversion&#34;&#34;&#34;
+
     PC = 50
     CC = 51
     OutA = 20
@@ -2166,11 +2662,11 @@ range</p></div>
 <h1>Index</h1>
 <div class="toc">
 <ul>
-<li><a href="#toptica-dlc-pro-control">Toptica DLC pro control</a><ul>
+<li><a href="#toptica-dlcpro-control">Toptica DLCpro control</a><ul>
 <li><a href="#examples">Examples</a></li>
 <li><a href="#todos-known-issues">Todos &amp; known issues</a></li>
 <li><a href="#source-contributions-license">Source, contributions &amp; license</a></li>
-<li><a href="#documentation">Documentation</a></li>
+<li><a href="#change-log">Change log</a></li>
 </ul>
 </li>
 </ul>
@@ -2179,6 +2675,7 @@ range</p></div>
 <li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
 <li><code><a title="dlccontrol.IP" href="#dlccontrol.IP">IP</a></code></li>
+<li><code><a title="dlccontrol.MAINTENANCE_PSW" href="#dlccontrol.MAINTENANCE_PSW">MAINTENANCE_PSW</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
@@ -2204,6 +2701,7 @@ range</p></div>
 <li><code><a title="dlccontrol.DLCcontrol.get_limits_from_dlc" href="#dlccontrol.DLCcontrol.get_limits_from_dlc">get_limits_from_dlc</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.get_remote_parameters" href="#dlccontrol.DLCcontrol.get_remote_parameters">get_remote_parameters</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.get_scan_parameters" href="#dlccontrol.DLCcontrol.get_scan_parameters">get_scan_parameters</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.get_user_level" href="#dlccontrol.DLCcontrol.get_user_level">get_user_level</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.open" href="#dlccontrol.DLCcontrol.open">open</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.read_parameters" href="#dlccontrol.DLCcontrol.read_parameters">read_parameters</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.remote_enabled" href="#dlccontrol.DLCcontrol.remote_enabled">remote_enabled</a></code></li>
@@ -2219,9 +2717,14 @@ range</p></div>
 <li><code><a title="dlccontrol.DLCcontrol.scan_output_channel" href="#dlccontrol.DLCcontrol.scan_output_channel">scan_output_channel</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.scan_start" href="#dlccontrol.DLCcontrol.scan_start">scan_start</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.set_parameters" href="#dlccontrol.DLCcontrol.set_parameters">set_parameters</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.set_user_level" href="#dlccontrol.DLCcontrol.set_user_level">set_user_level</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.temp_actual" href="#dlccontrol.DLCcontrol.temp_actual">temp_actual</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.temp_setpoint" href="#dlccontrol.DLCcontrol.temp_setpoint">temp_setpoint</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.temp_setting_present" href="#dlccontrol.DLCcontrol.temp_setting_present">temp_setting_present</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.verbose_emission_status" href="#dlccontrol.DLCcontrol.verbose_emission_status">verbose_emission_status</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.wavelength_actual" href="#dlccontrol.DLCcontrol.wavelength_actual">wavelength_actual</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.wavelength_setpoint" href="#dlccontrol.DLCcontrol.wavelength_setpoint">wavelength_setpoint</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.wl_setting_present" href="#dlccontrol.DLCcontrol.wl_setting_present">wl_setting_present</a></code></li>
 </ul>
 </li>
 <li>
@@ -2252,7 +2755,7 @@ range</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
 </footer>
 </body>
 </html>

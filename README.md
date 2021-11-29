@@ -1,17 +1,21 @@
-## Toptica DLC pro control
+## Toptica DLCpro control
 
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square)](https://www.codefactor.io/repository/github/asvela/dlc-control)
 [![MIT License](https://img.shields.io/github/license/asvela/dlc-control?style=flat-square)](https://github.com/asvela/dlc-control/blob/main/LICENSE)
 
-Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCL pro
+Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCLpro
 
 *Word of caution: This module controls potentially Class 4 lasers.*
 *Use is entirely on your own risk.*
 
+API documentation available [here](https://asvela.github.io/dlc-control/).
+Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py``
+
 The ``DLCcontrol`` class can read and control:
 
   * laser current on/off
-  * wavelength setpoint
+  * wavelength setpoint for lasers that have this option
+  * laser diode setpoint for lasers that have this option
   * analogue remote control settings (can control laser current and/or piezo simultaneously)
     - enable/disable
     - select input channel
@@ -24,8 +28,8 @@ The ``DLCcontrol`` class can read and control:
     - scan amplitude
 
 
-The class will check that wavelength setpoint and internal scan settings are
-within acceptable ranges (and raise a ``OutOfRangeError`` if not).
+The class will check that the wavelength/temperature setpoint and internal scan 
+settings are within acceptable ranges (and raise a ``OutOfRangeError`` if not).
 
 The module also provides some convenient dictionaries with all the settings it
 can modify, these dictionaries can be saved with measurement data to make sure
@@ -37,6 +41,7 @@ printed with ``DLCcontrol.get_all_parameters(verbose=True)``:
 
 ```
 -------------------------------------------------------
+timestamp      : 2021-11-29 22:42:02.707762
 scan:
  | enabled       : True
  | output channel: OutputChannel.PC
@@ -57,6 +62,9 @@ analogue remote:
 wavelength:
  | wl setpoint: 1550.46
  | wl actual  : 1550.460841087153
+temperatures:
+ | temp setpoint: None
+ | temp actual  : None
 -------------------------------------------------------
 ```
 
@@ -70,7 +78,7 @@ which can be used like this:
 ```python
 import dlccontrol as ctrl
 
-with ctrl.DLCcontrol("xx.xx.xx.xx") as dlc:
+with ctrl.DLCcontrol("xx.xx.xx.xx", wl_setting_present=True) as dlc:
       dlc.wavelength_setpoint = 1550
       actual_wl = dlc.wavelength_actual
       # Set up a the analogue remote control sweeping the current with the
@@ -124,6 +132,7 @@ More examples are in the `examples.py` module.
     dictionary entries
   * Set parameters from dict/file
   * Add property for setting the laser current when not scanning
+  * Tests would be helpful...
 
 
 ### Source, contributions & license
@@ -133,8 +142,13 @@ please report issues there. Contributions are also welcome.
 The source code is licensed under the MIT license.
 
 
-### Documentation
+### Change log
 
-Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py``
-
-Available on [Github pages](https://asvela.github.io/dlc-control/)
+  * v0.1.1 Nov 2021: 
+    - Added support for temperature tuned lasers
+    - Adding a `client` attribute to the `DLCcontrol` class to access any laser
+      attribute
+    - Methods for setting and getting the user level for enabling change of
+      restricted parameters
+    - Parameters dictionary now includes timestamp of the parameter set
+    - Black formatting

@@ -10,6 +10,7 @@ import time
 import enum
 import json
 import argparse
+import datetime
 import numpy as np
 import toptica.lasersdk as lasersdk
 import toptica.lasersdk.dlcpro.v2_4_0 as dlcsdk
@@ -129,7 +130,7 @@ class DLCcontrol:
 
     def __init__(
         self,
-        ip=IP,
+        ip=None,
         open_on_init=True,
         wl_setting_present=None,
         temp_setting_present=None,
@@ -194,7 +195,7 @@ class DLCcontrol:
         user level on the DLCpro console"""
         return decop.UserLevel(self.client.get("ul"))
 
-    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     def get_limits_from_dlc(self, verbose=False) -> dict:
         """Query the laser for the wavelength, piezo voltage, current and
@@ -314,6 +315,7 @@ class DLCcontrol:
         dict
             A nested dictionary with the parameters
         """
+        timestamp = datetime.datetime.now()
         wls = {
             "wl setpoint": self.wavelength_setpoint,
             "wl actual": self.wavelength_actual,
@@ -321,6 +323,7 @@ class DLCcontrol:
         temps = {"temp setpoint": self.temp_setpoint, "temp actual": self.temp_actual}
         # Updating scan parameters as they are interdependent
         params = {
+            "timestamp": str(timestamp),
             "scan": self.get_scan_parameters(),
             "analogue remote": self._remote_parameters,
             "wavelength": wls,
@@ -394,7 +397,7 @@ class DLCcontrol:
             scan_freq, peak_to_peak, scaling=1, calibration=self.calibration
         )
 
-    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def emission(self) -> bool:
@@ -419,7 +422,7 @@ class DLCcontrol:
             print("(!) Emission button on DLC not enabled, so cannot enable emission")
         self.dlc.laser1.dl.cc.enabled.set(val)
 
-    ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def wavelength_actual(self) -> float:
@@ -719,7 +722,7 @@ def freq_per_sec_from_params(params: dict, calibration: float) -> float:
     return freq_per_sec(scan_freq, peak_to_peak, scaling=1, calibration=calibration)
 
 
-# A programme ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+# An example programme ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 
 def step_through_scan_range(ip=IP, steps: int = 20, dlc: DLCcontrol = None):
@@ -753,7 +756,7 @@ def step_through_scan_range(ip=IP, steps: int = 20, dlc: DLCcontrol = None):
                 print(f"{i}: change to {initial_end+change:.3f}V")
                 try:
                     dlc.scan_offset = initial_end + change
-                except dlc.OutOfRangeError as err:
+                except OutOfRangeError as err:
                     print(err)
                     break
                 time.sleep(1)

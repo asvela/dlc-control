@@ -59,6 +59,7 @@ all settings are recorded. The <code><a title="dlccontrol.DLCcontrol" href="#dlc
 <p>Here are the parameters that can be saved, queried from the instrument and
 printed with <code>DLCcontrol.get_all_parameters(verbose=True)</code>:</p>
 <pre><code>-------------------------------------------------------
+timestamp      : 2021-11-29 22:42:02.707762
 scan:
  | enabled       : True
  | output channel: OutputChannel.PC
@@ -152,6 +153,7 @@ The source code is licensed under the MIT license.</p>
 attribute</li>
 <li>Methods for setting and getting the user level for enabling change of
 restricted parameters</li>
+<li>Parameters dictionary now includes timestamp of the parameter set</li>
 <li>Black formatting</li>
 </ul>
 </li>
@@ -172,13 +174,14 @@ import time
 import enum
 import json
 import argparse
+import datetime
 import numpy as np
 import toptica.lasersdk as lasersdk
 import toptica.lasersdk.dlcpro.v2_4_0 as dlcsdk
 from toptica.lasersdk import decop, client
 from typing import Union, Tuple, List, Any
 
-IP = &#34;0.0.0.0&#34;
+IP = &#34;192.168.100.100&#34;
 &#34;&#34;&#34;The default IP when initialising a ``DLCcontrol()``&#34;&#34;&#34;
 MAINTENANCE_PSW = &#34;CAUTION&#34;
 &#34;&#34;&#34;Factory default password for maintenance mode user level&#34;&#34;&#34;
@@ -291,7 +294,7 @@ class DLCcontrol:
 
     def __init__(
         self,
-        ip=IP,
+        ip=None,
         open_on_init=True,
         wl_setting_present=None,
         temp_setting_present=None,
@@ -356,7 +359,7 @@ class DLCcontrol:
         user level on the DLCpro console&#34;&#34;&#34;
         return decop.UserLevel(self.client.get(&#34;ul&#34;))
 
-    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     def get_limits_from_dlc(self, verbose=False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the wavelength, piezo voltage, current and
@@ -476,6 +479,7 @@ class DLCcontrol:
         dict
             A nested dictionary with the parameters
         &#34;&#34;&#34;
+        timestamp = datetime.datetime.now()
         wls = {
             &#34;wl setpoint&#34;: self.wavelength_setpoint,
             &#34;wl actual&#34;: self.wavelength_actual,
@@ -483,6 +487,7 @@ class DLCcontrol:
         temps = {&#34;temp setpoint&#34;: self.temp_setpoint, &#34;temp actual&#34;: self.temp_actual}
         # Updating scan parameters as they are interdependent
         params = {
+            &#34;timestamp&#34;: str(timestamp),
             &#34;scan&#34;: self.get_scan_parameters(),
             &#34;analogue remote&#34;: self._remote_parameters,
             &#34;wavelength&#34;: wls,
@@ -556,7 +561,7 @@ class DLCcontrol:
             scan_freq, peak_to_peak, scaling=1, calibration=self.calibration
         )
 
-    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def emission(self) -&gt; bool:
@@ -581,7 +586,7 @@ class DLCcontrol:
             print(&#34;(!) Emission button on DLC not enabled, so cannot enable emission&#34;)
         self.dlc.laser1.dl.cc.enabled.set(val)
 
-    ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def wavelength_actual(self) -&gt; float:
@@ -881,7 +886,7 @@ def freq_per_sec_from_params(params: dict, calibration: float) -&gt; float:
     return freq_per_sec(scan_freq, peak_to_peak, scaling=1, calibration=calibration)
 
 
-# A programme ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+# An example programme ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
 
 def step_through_scan_range(ip=IP, steps: int = 20, dlc: DLCcontrol = None):
@@ -915,7 +920,7 @@ def step_through_scan_range(ip=IP, steps: int = 20, dlc: DLCcontrol = None):
                 print(f&#34;{i}: change to {initial_end+change:.3f}V&#34;)
                 try:
                     dlc.scan_offset = initial_end + change
-                except dlc.OutOfRangeError as err:
+                except OutOfRangeError as err:
                     print(err)
                     break
                 time.sleep(1)
@@ -1159,7 +1164,7 @@ to the internal scan using a params dictionary</p>
 </details>
 </dd>
 <dt id="dlccontrol.step_through_scan_range"><code class="name flex">
-<span>def <span class="ident">step_through_scan_range</span></span>(<span>ip='0.0.0.0', steps: int = 20, dlc: <a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a> = None)</span>
+<span>def <span class="ident">step_through_scan_range</span></span>(<span>ip='192.168.100.100', steps: int = 20, dlc: <a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a> = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A simple programme: Step through the internal voltage/current
@@ -1208,7 +1213,7 @@ scan range currently in use</p>
                 print(f&#34;{i}: change to {initial_end+change:.3f}V&#34;)
                 try:
                     dlc.scan_offset = initial_end + change
-                except dlc.OutOfRangeError as err:
+                except OutOfRangeError as err:
                     print(err)
                     break
                 time.sleep(1)
@@ -1230,7 +1235,7 @@ scan range currently in use</p>
 <dl>
 <dt id="dlccontrol.DLCcontrol"><code class="flex name class">
 <span>class <span class="ident">DLCcontrol</span></span>
-<span>(</span><span>ip='0.0.0.0', open_on_init=True, wl_setting_present=None, temp_setting_present=None, **kwargs)</span>
+<span>(</span><span>ip=None, open_on_init=True, wl_setting_present=None, temp_setting_present=None, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Control a Toptica DLC over an Ethernet connection</p>
@@ -1284,7 +1289,7 @@ the class object</dd>
 
     def __init__(
         self,
-        ip=IP,
+        ip=None,
         open_on_init=True,
         wl_setting_present=None,
         temp_setting_present=None,
@@ -1349,7 +1354,7 @@ the class object</dd>
         user level on the DLCpro console&#34;&#34;&#34;
         return decop.UserLevel(self.client.get(&#34;ul&#34;))
 
-    ## Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     def get_limits_from_dlc(self, verbose=False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the wavelength, piezo voltage, current and
@@ -1469,6 +1474,7 @@ the class object</dd>
         dict
             A nested dictionary with the parameters
         &#34;&#34;&#34;
+        timestamp = datetime.datetime.now()
         wls = {
             &#34;wl setpoint&#34;: self.wavelength_setpoint,
             &#34;wl actual&#34;: self.wavelength_actual,
@@ -1476,6 +1482,7 @@ the class object</dd>
         temps = {&#34;temp setpoint&#34;: self.temp_setpoint, &#34;temp actual&#34;: self.temp_actual}
         # Updating scan parameters as they are interdependent
         params = {
+            &#34;timestamp&#34;: str(timestamp),
             &#34;scan&#34;: self.get_scan_parameters(),
             &#34;analogue remote&#34;: self._remote_parameters,
             &#34;wavelength&#34;: wls,
@@ -1549,7 +1556,7 @@ the class object</dd>
             scan_freq, peak_to_peak, scaling=1, calibration=self.calibration
         )
 
-    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Emission properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def emission(self) -&gt; bool:
@@ -1574,7 +1581,7 @@ the class object</dd>
             print(&#34;(!) Emission button on DLC not enabled, so cannot enable emission&#34;)
         self.dlc.laser1.dl.cc.enabled.set(val)
 
-    ## Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
+    # Wavelength properties ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
     @property
     def wavelength_actual(self) -&gt; float:
@@ -2238,6 +2245,7 @@ with the module</p>
     dict
         A nested dictionary with the parameters
     &#34;&#34;&#34;
+    timestamp = datetime.datetime.now()
     wls = {
         &#34;wl setpoint&#34;: self.wavelength_setpoint,
         &#34;wl actual&#34;: self.wavelength_actual,
@@ -2245,6 +2253,7 @@ with the module</p>
     temps = {&#34;temp setpoint&#34;: self.temp_setpoint, &#34;temp actual&#34;: self.temp_actual}
     # Updating scan parameters as they are interdependent
     params = {
+        &#34;timestamp&#34;: str(timestamp),
         &#34;scan&#34;: self.get_scan_parameters(),
         &#34;analogue remote&#34;: self._remote_parameters,
         &#34;wavelength&#34;: wls,

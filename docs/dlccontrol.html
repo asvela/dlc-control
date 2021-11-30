@@ -49,6 +49,8 @@ current)<ul>
 <li>scan amplitude</li>
 </ul>
 </li>
+<li>user level (normal, maintenance, service)</li>
+<li>any other setting using the <code><a title="dlccontrol.DLCcontrol.client" href="#dlccontrol.DLCcontrol.client">DLCcontrol.client</a></code> attribute</li>
 </ul>
 <p>The class will check that the wavelength/temperature setpoint and internal scan
 settings are within acceptable ranges (and raise a <code><a title="dlccontrol.OutOfRangeError" href="#dlccontrol.OutOfRangeError">OutOfRangeError</a></code> if not).</p>
@@ -85,49 +87,78 @@ temperatures:
  | temp actual  : None
 -------------------------------------------------------
 </code></pre>
-<h3 id="examples">Examples</h3>
+<h3 id="comparison-to-the-topica-laser-sdk">Comparison to the Topica laser SDK</h3>
 <p>The module uses properties extensively (listed as <code>Instance variables</code> in the
 docs), which means class attributes have setter and getter functions,
 which can be used like this:</p>
 <pre><code class="language-python">import dlccontrol as ctrl
 
-with ctrl.DLCcontrol(&quot;xx.xx.xx.xx&quot;, wl_setting_present=True) as dlc:
-      dlc.wavelength_setpoint = 1550
-      actual_wl = dlc.wavelength_actual
-      # Set up a the analogue remote control sweeping the current with the
-      # on input Fine1
-      dlc.remote_select = &quot;CC&quot;
-      dlc.remote_signal = &quot;Fine1&quot;
-      dlc.remote_factor = 10
-      dlc.remote_enable = True
-      # Use the internal voltage scan and gradually increase the scan amplitude
-      dlc.scan_output_channel = &quot;PC&quot;
-      initial_amplitude = dlc.scan_amplitude
-      dlc.scan_frequency = 20
-      for i in range(10):
-          dlc.scan_amplitude = i
-       dlc.scan_amplitude = initial_amplitude
+with ctrl.DLCcontrol(&quot;xx.xx.xx.xx&quot;) as dlc:
+    # Change wavelength or laser diode temperature depending on how the unit is
+    # controlled
+    if dlc.wl_setting_present:
+        dlc.wavelength_setpoint = 1550
+        actual_wl = dlc.wavelength_actual
+    if dlc.temp_setting_present:
+        dlc.temp_setpoint = 20
+        actual_temp = dlc.temp_actual
+    # Set up a the analogue remote control sweeping the current with the
+    # on input Fine1
+    dlc.remote_select = &quot;CC&quot;
+    dlc.remote_signal = &quot;Fine1&quot;
+    dlc.remote_factor = 10
+    dlc.remote_enable = True
+    # Use the internal voltage scan and gradually increase the scan amplitude
+    dlc.scan_output_channel = &quot;PC&quot;
+    initial_amplitude = dlc.scan_amplitude
+    dlc.scan_frequency = 20
+    for i in range(10):
+        dlc.scan_amplitude = i
+      dlc.scan_amplitude = initial_amplitude
 </code></pre>
 <p>Doing the same with the Toptica SDK would look like this (and this module
-is providing a lot of other features in addition to simplifying the syntax)</p>
+is providing other features in addition to simplifying the syntax)</p>
 <pre><code class="language-python">import toptica.lasersdk.dlcpro.v2_4_0 as toptica
+import toptica.lasersdk.decop as decop
 
 with toptica.DLCpro(toptica.NetworkConnection(&quot;xx.xx.xx.xx&quot;)) as dlc:
+    try:
         dlc.laser1.ctl.wavelength_set.set(float(1550))
         actual_wl = dlc.laser1.ctl.wavelength_act.get()
-        # Set up a the analogue remote control sweeping the current with the
-        # on input Fine1
-        dlc.laser1.dl.cc.external_input.signal.set(0)
-        dlc.laser1.dl.cc.external_input.factor.set(10)
-        dlc.laser1.dl.cc.external_input.enable.set(True)
-        # Use the internal voltage scan and gradually increase the scan amplitude
-        dlc.laser1.scan.output_channel.set(50)
-        initial_amplitude = dlc.laser1.scan.amplitude.get()
-        dlc.laser1.scan.frequency.set(20)
-        for i in range(10):
-            dlc.laser1.scan.amplitude.set(float(i))
-        dlc.laser1.scan.amplitude.set(initial_amplitude)
+    except decop.DecopError:
+        pass
+    try:
+        dlc.laser1.dl.tc.temp_set(float(20))
+        actual_temp = dlc.laser1.dl.tc.temp_act.get()
+    except decop.DecopError:
+        pass
+    # Set up a the analogue remote control sweeping the current with the
+    # on input Fine1
+    dlc.laser1.dl.cc.external_input.signal.set(0)
+    dlc.laser1.dl.cc.external_input.factor.set(10)
+    dlc.laser1.dl.cc.external_input.enable.set(True)
+    # Use the internal voltage scan and gradually increase the scan amplitude
+    dlc.laser1.scan.output_channel.set(50)
+    initial_amplitude = dlc.laser1.scan.amplitude.get()
+    dlc.laser1.scan.frequency.set(20)
+    for i in range(10):
+        dlc.laser1.scan.amplitude.set(float(i))
+    dlc.laser1.scan.amplitude.set(initial_amplitude)
 </code></pre>
+<h3 id="access-any-setting-with-client">Access any setting with <code>client</code></h3>
+<p>If you want to access other settings than what the wrapper conveniently offers,
+the <code><a title="dlccontrol.DLCcontrol.client" href="#dlccontrol.DLCcontrol.client">DLCcontrol.client</a></code> attribute is useful as it can give you access to any other setting:</p>
+<pre><code class="language-python">import dlccontrol as ctrl
+with ctrl.DLCcontrol(&quot;xx.xx.xx.xx&quot;) as dlc:
+    print(dlc.client.get(&quot;serial-number&quot;))
+    # Need higher privilige to access the following commands
+    dlc.set_user_level(1, &quot;password from manual&quot;)
+    dlc.client.set(&quot;laser1:dl:cc:current-clip&quot;, 250)
+    dlc.client.set(&quot;laser1:dl:factory-settings:cc:current-clip&quot;, 250)
+    dlc.client.exec(&quot;laser-common:store-all&quot;)
+</code></pre>
+<p>Note also the <code><a title="dlccontrol.DLCcontrol.set_user_level" href="#dlccontrol.DLCcontrol.set_user_level">DLCcontrol.set_user_level()</a></code> function to elevate the connection for access
+to protected settings.</p>
 <p>More examples are in the <code>examples.py</code> module.</p>
 <h3 id="todos-known-issues">Todos &amp; known issues</h3>
 <ul>
@@ -145,10 +176,11 @@ dictionary entries</li>
 <p>The source is available on <a href="https://github.com/asvela/dlc-control/">Github</a>,
 please report issues there. Contributions are also welcome.
 The source code is licensed under the MIT license.</p>
-<h3 id="change-log">Change log</h3>
+<h3 id="changelog">Changelog</h3>
 <ul>
-<li>v0.1.1 Nov 2021: <ul>
-<li>Added support for temperature tuned lasers</li>
+<li>v0.2.0 Nov 2021: <ul>
+<li>Added support for temperature tuned lasers, automatic discovery of whether
+the laser is wavelength or temperature controlled</li>
 <li>Adding a <code>client</code> attribute to the <code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code> class to access any laser
 attribute</li>
 <li>Methods for setting and getting the user level for enabling change of
@@ -261,19 +293,22 @@ _ENABLED_DISABLED = {True: &#34;enabled&#34;, False: &#34;disabled&#34;}
 
 
 class DLCcontrol:
-    &#34;&#34;&#34;Control a Toptica DLC over an Ethernet connection
+    &#34;&#34;&#34;Control a Toptica DLCpro over an Ethernet connection
 
     Parameters
     ----------
-    ip : str, default the module constant ``IP``
-        Ip address of the DLC unit
+    ip : str, default is the class attribute _ip (which defaults to the module constant ``IP``)
+        IP address of the DLC unit
     open_on_init : bool, default ``True``
         Decide if ``open()`` should be called during the initialisation of
         the class object
-    wl_setting_present : bool, default ``False``
-        Use ``True`` if the wavelength of the laser can be set
-    temp_setting_present : bool, default ``False``
-        Use ``True`` if the temperature of the laser diode can be set
+    discover_wl_or_temp_control : bool, default ``True``
+        Let the object automatically check if the laser is controlled by setting the
+        wavelength or diode temperature
+    force_wl_control_available : bool, default ``False``
+        Force the object to assume the wavelength of the laser can be set
+    force_temp_control_available : bool, default ``False``
+        Force the object to assume the temperature of the laser diode can be set
     &#34;&#34;&#34;
 
     _ip = IP
@@ -287,23 +322,29 @@ class DLCcontrol:
     &#34;&#34;&#34;MHz/mA or MHz/V calibration for the internal scan. Set by calling the
     ``freq_per_sec_internal_scan()`` method. After being set, the calibration
     will be kept in memory for future calls&#34;&#34;&#34;
-    wl_setting_present = False
-    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a wavelength setpoint&#34;&#34;&#34;
-    temp_setting_present = False
-    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a temperature setpoint&#34;&#34;&#34;
+    wl_control_available = False
+    &#34;&#34;&#34;Tells the object whether the laser is controlled with a wavelength setpoint&#34;&#34;&#34;
+    temp_control_available = False
+    &#34;&#34;&#34;Tells the object whether the laser is controlled with a temperature setpoint&#34;&#34;&#34;
+    client = None
+    &#34;&#34;&#34;After opening the connection the client can be used to control any setting
+    for the DLCpro, for instance `client.set(&#34;laser1:dl:cc:current-act&#34;, 10)`&#34;&#34;&#34;
 
     def __init__(
         self,
-        ip=None,
-        open_on_init=True,
-        wl_setting_present=None,
-        temp_setting_present=None,
-        **kwargs,
+        ip: Union[str, None] = None,
+        open_on_init: bool = True,
+        discover_wl_or_temp_control: bool = True,
+        force_wl_control_available: bool = False,
+        force_temp_control_available: bool = False,
     ):
-        if wl_setting_present is not None:
-            self.wl_setting_present = wl_setting_present
-        if temp_setting_present is not None:
-            self.temp_setting_present = temp_setting_present
+        self.discover_wl_or_temp_control = discover_wl_or_temp_control
+        if force_wl_control_available:
+            self.wl_control_available = True
+            self.discover_wl_or_temp_control = False
+        if force_temp_control_available:
+            self.temp_control_available = True
+            self.discover_wl_or_temp_control = False
         if ip is not None:
             self._ip = ip
         self.connection = dlcsdk.NetworkConnection(self._ip)
@@ -323,7 +364,9 @@ class DLCcontrol:
         laser required to use the class&#34;&#34;&#34;
         self.dlc.open()
         self._is_open = True
-        # Make sure all class sttributes are up to date
+        # Make sure all class attributes are up to date
+        if self.discover_wl_or_temp_control:
+            self._discover_control()
         self.get_limits_from_dlc()
         self.get_scan_parameters()
         self.get_remote_parameters()
@@ -334,9 +377,21 @@ class DLCcontrol:
         if self._is_open:
             self.dlc.close()
 
-    def set_user_level(self, level: int, password: str = &#34;default&#34;, verbose=True):
+    def set_user_level(
+        self, level: int, password: str = &#34;default&#34;, verbose: bool = True
+    ):
         &#34;&#34;&#34;Sets the user level privileges of the client *connection*, does not change
-        the user level on the DLCpro console&#34;&#34;&#34;
+        the user level on the DLCpro console
+
+        Parameters
+        ----------
+        level : int
+            User level where 3 is normal, 2 is maintenance, 1 is service
+        password : str
+            Password for accessing this level. Using `default` will select the correct
+            passoword for level 3 and 2. For level 1, the password is unique to the
+            DLCpro and can be found in the datasheet.
+        &#34;&#34;&#34;
         if password == &#34;default&#34;:
             if level == 1:
                 print(
@@ -361,6 +416,35 @@ class DLCcontrol:
 
     # Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
+    def _discover_control(self, verbose=False):
+        # Check for wavelength control
+        try:
+            self.dlc.laser1.ctl.wavelength_min.get()
+            self.wl_control_available = True
+        except decop.DecopError as e:
+            errormsg = e.args[0]
+            if not (&#34;-20&#34; in errormsg or &#34;unavailable&#34; in errormsg):
+                print(
+                    f&#34;Unknown error &#39;{e}&#39; when discovering if wavelength control is available&#34;
+                )
+            self.temp_control_available = False
+        # Check for laser diode temperature control
+        try:
+            self.dlc.laser1.dl.tc.temp_set_min.get()
+            self.temp_control_available = True
+        except decop.DecopError as e:
+            errormsg = e.args[0]
+            if not (&#34;-20&#34; in errormsg or &#34;unavailable&#34; in errormsg):
+                print(
+                    f&#34;Unknown error &#39;{e}&#39; when discovering if laser diode temperature control is available&#34;
+                )
+            self.temp_control_available = False
+        if verbose:
+            print(f&#34;The laser has wavelength control: {self.wl_control_available}&#34;)
+            print(
+                f&#34;The laser has diode temperature control: {self.temp_control_available}&#34;
+            )
+
     def get_limits_from_dlc(self, verbose=False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the wavelength, piezo voltage, current and
         scan frequency limits, and populate the ``_lims`` dict attribute
@@ -382,14 +466,14 @@ class DLCcontrol:
             &#34;wlmin&#34;: None,
             &#34;wlmax&#34;: None,
         }
-        if self.wl_setting_present:
+        if self.wl_control_available:
             self._lims.update(
                 {
                     &#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
                     &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
                 }
             )
-        if self.temp_setting_present:
+        if self.temp_control_available:
             self._lims.update(
                 {
                     &#34;tmin&#34;: self.dlc.laser1.dl.tc.temp_set_min.get(),
@@ -591,22 +675,22 @@ class DLCcontrol:
     @property
     def wavelength_actual(self) -&gt; float:
         &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
-        if not self.wl_setting_present:
+        if not self.wl_control_available:
             return None
         return self.dlc.laser1.ctl.wavelength_act.get()
 
     @property
     def wavelength_setpoint(self) -&gt; float:
         &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
-        if not self.wl_setting_present:
+        if not self.wl_control_available:
             return None
         return self.dlc.laser1.ctl.wavelength_set.get()
 
     @wavelength_setpoint.setter
     def wavelength_setpoint(self, val: float):
-        if not self.wl_setting_present:
+        if not self.wl_control_available:
             raise RuntimeError(
-                &#34;Cannot set wavelength when `wl_setting_present` is False&#34;
+                &#34;Cannot set wavelength when `wl_control_available` is False&#34;
             )
         if val is None:
             return
@@ -620,23 +704,23 @@ class DLCcontrol:
 
     @property
     def temp_actual(self) -&gt; float:
-        &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
-        if not self.temp_setting_present:
+        &#34;&#34;&#34;The actual temperature of the laser diode (read only)&#34;&#34;&#34;
+        if not self.temp_control_available:
             return None
         return self.dlc.laser1.dl.tc.temp_act.get()
 
     @property
     def temp_setpoint(self) -&gt; float:
-        &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
-        if not self.temp_setting_present:
+        &#34;&#34;&#34;The setpoint of the laser diode temperature&#34;&#34;&#34;
+        if not self.temp_control_available:
             return None
         return self.dlc.laser1.dl.tc.temp_set.get()
 
     @temp_setpoint.setter
     def temp_setpoint(self, val: float):
-        if not self.temp_setting_present:
+        if not self.temp_control_available:
             raise RuntimeError(
-                &#34;Cannot set diode temperature `temp_setting_present` is False&#34;
+                &#34;Cannot set diode temperature `temp_control_available` is False&#34;
             )
         if val is None:
             return
@@ -1235,40 +1319,46 @@ scan range currently in use</p>
 <dl>
 <dt id="dlccontrol.DLCcontrol"><code class="flex name class">
 <span>class <span class="ident">DLCcontrol</span></span>
-<span>(</span><span>ip=None, open_on_init=True, wl_setting_present=None, temp_setting_present=None, **kwargs)</span>
+<span>(</span><span>ip: Optional[str] = None, open_on_init: bool = True, discover_wl_or_temp_control: bool = True, force_wl_control_available: bool = False, force_temp_control_available: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Control a Toptica DLC over an Ethernet connection</p>
+<div class="desc"><p>Control a Toptica DLCpro over an Ethernet connection</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>ip</code></strong> :&ensp;<code>str</code>, default `the module constant ``IP```</dt>
-<dd>Ip address of the DLC unit</dd>
+<dt><strong><code>ip</code></strong> :&ensp;<code>str</code>, default <code>is the class attribute _ip (which defaults to the module constant <code>&lt;a title="dlccontrol.IP" href="#dlccontrol.IP"&gt;IP&lt;/a&gt;</code>)</code></dt>
+<dd>IP address of the DLC unit</dd>
 <dt><strong><code>open_on_init</code></strong> :&ensp;<code>bool</code>, default <code>True</code></dt>
 <dd>Decide if <code>open()</code> should be called during the initialisation of
 the class object</dd>
-<dt><strong><code>wl_setting_present</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
-<dd>Use <code>True</code> if the wavelength of the laser can be set</dd>
-<dt><strong><code>temp_setting_present</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
-<dd>Use <code>True</code> if the temperature of the laser diode can be set</dd>
+<dt><strong><code>discover_wl_or_temp_control</code></strong> :&ensp;<code>bool</code>, default <code>True</code></dt>
+<dd>Let the object automatically check if the laser is controlled by setting the
+wavelength or diode temperature</dd>
+<dt><strong><code>force_wl_control_available</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
+<dd>Force the object to assume the wavelength of the laser can be set</dd>
+<dt><strong><code>force_temp_control_available</code></strong> :&ensp;<code>bool</code>, default <code>False</code></dt>
+<dd>Force the object to assume the temperature of the laser diode can be set</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class DLCcontrol:
-    &#34;&#34;&#34;Control a Toptica DLC over an Ethernet connection
+    &#34;&#34;&#34;Control a Toptica DLCpro over an Ethernet connection
 
     Parameters
     ----------
-    ip : str, default the module constant ``IP``
-        Ip address of the DLC unit
+    ip : str, default is the class attribute _ip (which defaults to the module constant ``IP``)
+        IP address of the DLC unit
     open_on_init : bool, default ``True``
         Decide if ``open()`` should be called during the initialisation of
         the class object
-    wl_setting_present : bool, default ``False``
-        Use ``True`` if the wavelength of the laser can be set
-    temp_setting_present : bool, default ``False``
-        Use ``True`` if the temperature of the laser diode can be set
+    discover_wl_or_temp_control : bool, default ``True``
+        Let the object automatically check if the laser is controlled by setting the
+        wavelength or diode temperature
+    force_wl_control_available : bool, default ``False``
+        Force the object to assume the wavelength of the laser can be set
+    force_temp_control_available : bool, default ``False``
+        Force the object to assume the temperature of the laser diode can be set
     &#34;&#34;&#34;
 
     _ip = IP
@@ -1282,23 +1372,29 @@ the class object</dd>
     &#34;&#34;&#34;MHz/mA or MHz/V calibration for the internal scan. Set by calling the
     ``freq_per_sec_internal_scan()`` method. After being set, the calibration
     will be kept in memory for future calls&#34;&#34;&#34;
-    wl_setting_present = False
-    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a wavelength setpoint&#34;&#34;&#34;
-    temp_setting_present = False
-    &#34;&#34;&#34;Tells the wrapper whether the laser is controlled with a temperature setpoint&#34;&#34;&#34;
+    wl_control_available = False
+    &#34;&#34;&#34;Tells the object whether the laser is controlled with a wavelength setpoint&#34;&#34;&#34;
+    temp_control_available = False
+    &#34;&#34;&#34;Tells the object whether the laser is controlled with a temperature setpoint&#34;&#34;&#34;
+    client = None
+    &#34;&#34;&#34;After opening the connection the client can be used to control any setting
+    for the DLCpro, for instance `client.set(&#34;laser1:dl:cc:current-act&#34;, 10)`&#34;&#34;&#34;
 
     def __init__(
         self,
-        ip=None,
-        open_on_init=True,
-        wl_setting_present=None,
-        temp_setting_present=None,
-        **kwargs,
+        ip: Union[str, None] = None,
+        open_on_init: bool = True,
+        discover_wl_or_temp_control: bool = True,
+        force_wl_control_available: bool = False,
+        force_temp_control_available: bool = False,
     ):
-        if wl_setting_present is not None:
-            self.wl_setting_present = wl_setting_present
-        if temp_setting_present is not None:
-            self.temp_setting_present = temp_setting_present
+        self.discover_wl_or_temp_control = discover_wl_or_temp_control
+        if force_wl_control_available:
+            self.wl_control_available = True
+            self.discover_wl_or_temp_control = False
+        if force_temp_control_available:
+            self.temp_control_available = True
+            self.discover_wl_or_temp_control = False
         if ip is not None:
             self._ip = ip
         self.connection = dlcsdk.NetworkConnection(self._ip)
@@ -1318,7 +1414,9 @@ the class object</dd>
         laser required to use the class&#34;&#34;&#34;
         self.dlc.open()
         self._is_open = True
-        # Make sure all class sttributes are up to date
+        # Make sure all class attributes are up to date
+        if self.discover_wl_or_temp_control:
+            self._discover_control()
         self.get_limits_from_dlc()
         self.get_scan_parameters()
         self.get_remote_parameters()
@@ -1329,9 +1427,21 @@ the class object</dd>
         if self._is_open:
             self.dlc.close()
 
-    def set_user_level(self, level: int, password: str = &#34;default&#34;, verbose=True):
+    def set_user_level(
+        self, level: int, password: str = &#34;default&#34;, verbose: bool = True
+    ):
         &#34;&#34;&#34;Sets the user level privileges of the client *connection*, does not change
-        the user level on the DLCpro console&#34;&#34;&#34;
+        the user level on the DLCpro console
+
+        Parameters
+        ----------
+        level : int
+            User level where 3 is normal, 2 is maintenance, 1 is service
+        password : str
+            Password for accessing this level. Using `default` will select the correct
+            passoword for level 3 and 2. For level 1, the password is unique to the
+            DLCpro and can be found in the datasheet.
+        &#34;&#34;&#34;
         if password == &#34;default&#34;:
             if level == 1:
                 print(
@@ -1356,6 +1466,35 @@ the class object</dd>
 
     # Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
+    def _discover_control(self, verbose=False):
+        # Check for wavelength control
+        try:
+            self.dlc.laser1.ctl.wavelength_min.get()
+            self.wl_control_available = True
+        except decop.DecopError as e:
+            errormsg = e.args[0]
+            if not (&#34;-20&#34; in errormsg or &#34;unavailable&#34; in errormsg):
+                print(
+                    f&#34;Unknown error &#39;{e}&#39; when discovering if wavelength control is available&#34;
+                )
+            self.temp_control_available = False
+        # Check for laser diode temperature control
+        try:
+            self.dlc.laser1.dl.tc.temp_set_min.get()
+            self.temp_control_available = True
+        except decop.DecopError as e:
+            errormsg = e.args[0]
+            if not (&#34;-20&#34; in errormsg or &#34;unavailable&#34; in errormsg):
+                print(
+                    f&#34;Unknown error &#39;{e}&#39; when discovering if laser diode temperature control is available&#34;
+                )
+            self.temp_control_available = False
+        if verbose:
+            print(f&#34;The laser has wavelength control: {self.wl_control_available}&#34;)
+            print(
+                f&#34;The laser has diode temperature control: {self.temp_control_available}&#34;
+            )
+
     def get_limits_from_dlc(self, verbose=False) -&gt; dict:
         &#34;&#34;&#34;Query the laser for the wavelength, piezo voltage, current and
         scan frequency limits, and populate the ``_lims`` dict attribute
@@ -1377,14 +1516,14 @@ the class object</dd>
             &#34;wlmin&#34;: None,
             &#34;wlmax&#34;: None,
         }
-        if self.wl_setting_present:
+        if self.wl_control_available:
             self._lims.update(
                 {
                     &#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
                     &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
                 }
             )
-        if self.temp_setting_present:
+        if self.temp_control_available:
             self._lims.update(
                 {
                     &#34;tmin&#34;: self.dlc.laser1.dl.tc.temp_set_min.get(),
@@ -1586,22 +1725,22 @@ the class object</dd>
     @property
     def wavelength_actual(self) -&gt; float:
         &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
-        if not self.wl_setting_present:
+        if not self.wl_control_available:
             return None
         return self.dlc.laser1.ctl.wavelength_act.get()
 
     @property
     def wavelength_setpoint(self) -&gt; float:
         &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
-        if not self.wl_setting_present:
+        if not self.wl_control_available:
             return None
         return self.dlc.laser1.ctl.wavelength_set.get()
 
     @wavelength_setpoint.setter
     def wavelength_setpoint(self, val: float):
-        if not self.wl_setting_present:
+        if not self.wl_control_available:
             raise RuntimeError(
-                &#34;Cannot set wavelength when `wl_setting_present` is False&#34;
+                &#34;Cannot set wavelength when `wl_control_available` is False&#34;
             )
         if val is None:
             return
@@ -1615,23 +1754,23 @@ the class object</dd>
 
     @property
     def temp_actual(self) -&gt; float:
-        &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
-        if not self.temp_setting_present:
+        &#34;&#34;&#34;The actual temperature of the laser diode (read only)&#34;&#34;&#34;
+        if not self.temp_control_available:
             return None
         return self.dlc.laser1.dl.tc.temp_act.get()
 
     @property
     def temp_setpoint(self) -&gt; float:
-        &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
-        if not self.temp_setting_present:
+        &#34;&#34;&#34;The setpoint of the laser diode temperature&#34;&#34;&#34;
+        if not self.temp_control_available:
             return None
         return self.dlc.laser1.dl.tc.temp_set.get()
 
     @temp_setpoint.setter
     def temp_setpoint(self, val: float):
-        if not self.temp_setting_present:
+        if not self.temp_control_available:
             raise RuntimeError(
-                &#34;Cannot set diode temperature `temp_setting_present` is False&#34;
+                &#34;Cannot set diode temperature `temp_control_available` is False&#34;
             )
         if val is None:
             return
@@ -1848,13 +1987,18 @@ the class object</dd>
 <code>freq_per_sec_internal_scan()</code> method. After being set, the calibration
 will be kept in memory for future calls</p></div>
 </dd>
-<dt id="dlccontrol.DLCcontrol.temp_setting_present"><code class="name">var <span class="ident">temp_setting_present</span></code></dt>
+<dt id="dlccontrol.DLCcontrol.client"><code class="name">var <span class="ident">client</span></code></dt>
 <dd>
-<div class="desc"><p>Tells the wrapper whether the laser is controlled with a temperature setpoint</p></div>
+<div class="desc"><p>After opening the connection the client can be used to control any setting
+for the DLCpro, for instance <code>client.set("laser1:dl:cc:current-act", 10)</code></p></div>
 </dd>
-<dt id="dlccontrol.DLCcontrol.wl_setting_present"><code class="name">var <span class="ident">wl_setting_present</span></code></dt>
+<dt id="dlccontrol.DLCcontrol.temp_control_available"><code class="name">var <span class="ident">temp_control_available</span></code></dt>
 <dd>
-<div class="desc"><p>Tells the wrapper whether the laser is controlled with a wavelength setpoint</p></div>
+<div class="desc"><p>Tells the object whether the laser is controlled with a temperature setpoint</p></div>
+</dd>
+<dt id="dlccontrol.DLCcontrol.wl_control_available"><code class="name">var <span class="ident">wl_control_available</span></code></dt>
+<dd>
+<div class="desc"><p>Tells the object whether the laser is controlled with a wavelength setpoint</p></div>
 </dd>
 </dl>
 <h3>Static methods</h3>
@@ -2111,30 +2255,30 @@ def scan_start(self) -&gt; float:
 </dd>
 <dt id="dlccontrol.DLCcontrol.temp_actual"><code class="name">var <span class="ident">temp_actual</span> : float</code></dt>
 <dd>
-<div class="desc"><p>The actual wavelength of the laser (read only)</p></div>
+<div class="desc"><p>The actual temperature of the laser diode (read only)</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def temp_actual(self) -&gt; float:
-    &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
-    if not self.temp_setting_present:
+    &#34;&#34;&#34;The actual temperature of the laser diode (read only)&#34;&#34;&#34;
+    if not self.temp_control_available:
         return None
     return self.dlc.laser1.dl.tc.temp_act.get()</code></pre>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.temp_setpoint"><code class="name">var <span class="ident">temp_setpoint</span> : float</code></dt>
 <dd>
-<div class="desc"><p>The setpont of the laser wavelength</p></div>
+<div class="desc"><p>The setpoint of the laser diode temperature</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@property
 def temp_setpoint(self) -&gt; float:
-    &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
-    if not self.temp_setting_present:
+    &#34;&#34;&#34;The setpoint of the laser diode temperature&#34;&#34;&#34;
+    if not self.temp_control_available:
         return None
     return self.dlc.laser1.dl.tc.temp_set.get()</code></pre>
 </details>
@@ -2149,7 +2293,7 @@ def temp_setpoint(self) -&gt; float:
 <pre><code class="python">@property
 def wavelength_actual(self) -&gt; float:
     &#34;&#34;&#34;The actual wavelength of the laser (read only)&#34;&#34;&#34;
-    if not self.wl_setting_present:
+    if not self.wl_control_available:
         return None
     return self.dlc.laser1.ctl.wavelength_act.get()</code></pre>
 </details>
@@ -2164,7 +2308,7 @@ def wavelength_actual(self) -&gt; float:
 <pre><code class="python">@property
 def wavelength_setpoint(self) -&gt; float:
     &#34;&#34;&#34;The setpont of the laser wavelength&#34;&#34;&#34;
-    if not self.wl_setting_present:
+    if not self.wl_control_available:
         return None
     return self.dlc.laser1.ctl.wavelength_set.get()</code></pre>
 </details>
@@ -2300,14 +2444,14 @@ scan frequency limits, and populate the <code>_lims</code> dict attribute</p>
         &#34;wlmin&#34;: None,
         &#34;wlmax&#34;: None,
     }
-    if self.wl_setting_present:
+    if self.wl_control_available:
         self._lims.update(
             {
                 &#34;wlmin&#34;: self.dlc.laser1.ctl.wavelength_min.get(),
                 &#34;wlmax&#34;: self.dlc.laser1.ctl.wavelength_max.get(),
             }
         )
-    if self.temp_setting_present:
+    if self.temp_control_available:
         self._lims.update(
             {
                 &#34;tmin&#34;: self.dlc.laser1.dl.tc.temp_set_min.get(),
@@ -2425,7 +2569,9 @@ laser required to use the class</p></div>
     laser required to use the class&#34;&#34;&#34;
     self.dlc.open()
     self._is_open = True
-    # Make sure all class sttributes are up to date
+    # Make sure all class attributes are up to date
+    if self.discover_wl_or_temp_control:
+        self._discover_control()
     self.get_limits_from_dlc()
     self.get_scan_parameters()
     self.get_remote_parameters()
@@ -2483,18 +2629,39 @@ accordingly</p></div>
 </details>
 </dd>
 <dt id="dlccontrol.DLCcontrol.set_user_level"><code class="name flex">
-<span>def <span class="ident">set_user_level</span></span>(<span>self, level: int, password: str = 'default', verbose=True)</span>
+<span>def <span class="ident">set_user_level</span></span>(<span>self, level: int, password: str = 'default', verbose: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Sets the user level privileges of the client <em>connection</em>, does not change
-the user level on the DLCpro console</p></div>
+the user level on the DLCpro console</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>level</code></strong> :&ensp;<code>int</code></dt>
+<dd>User level where 3 is normal, 2 is maintenance, 1 is service</dd>
+<dt><strong><code>password</code></strong> :&ensp;<code>str</code></dt>
+<dd>Password for accessing this level. Using <code>default</code> will select the correct
+passoword for level 3 and 2. For level 1, the password is unique to the
+DLCpro and can be found in the datasheet.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def set_user_level(self, level: int, password: str = &#34;default&#34;, verbose=True):
+<pre><code class="python">def set_user_level(
+    self, level: int, password: str = &#34;default&#34;, verbose: bool = True
+):
     &#34;&#34;&#34;Sets the user level privileges of the client *connection*, does not change
-    the user level on the DLCpro console&#34;&#34;&#34;
+    the user level on the DLCpro console
+
+    Parameters
+    ----------
+    level : int
+        User level where 3 is normal, 2 is maintenance, 1 is service
+    password : str
+        Password for accessing this level. Using `default` will select the correct
+        passoword for level 3 and 2. For level 1, the password is unique to the
+        DLCpro and can be found in the datasheet.
+    &#34;&#34;&#34;
     if password == &#34;default&#34;:
         if level == 1:
             print(
@@ -2672,10 +2839,11 @@ range</p></div>
 <div class="toc">
 <ul>
 <li><a href="#toptica-dlcpro-control">Toptica DLCpro control</a><ul>
-<li><a href="#examples">Examples</a></li>
+<li><a href="#comparison-to-the-topica-laser-sdk">Comparison to the Topica laser SDK</a></li>
+<li><a href="#access-any-setting-with-client">Access any setting with client</a></li>
 <li><a href="#todos-known-issues">Todos &amp; known issues</a></li>
 <li><a href="#source-contributions-license">Source, contributions &amp; license</a></li>
-<li><a href="#change-log">Change log</a></li>
+<li><a href="#changelog">Changelog</a></li>
 </ul>
 </li>
 </ul>
@@ -2701,6 +2869,7 @@ range</p></div>
 <h4><code><a title="dlccontrol.DLCcontrol" href="#dlccontrol.DLCcontrol">DLCcontrol</a></code></h4>
 <ul class="">
 <li><code><a title="dlccontrol.DLCcontrol.calibration" href="#dlccontrol.DLCcontrol.calibration">calibration</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.client" href="#dlccontrol.DLCcontrol.client">client</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.close" href="#dlccontrol.DLCcontrol.close">close</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.current_enabled" href="#dlccontrol.DLCcontrol.current_enabled">current_enabled</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.emission" href="#dlccontrol.DLCcontrol.emission">emission</a></code></li>
@@ -2728,12 +2897,12 @@ range</p></div>
 <li><code><a title="dlccontrol.DLCcontrol.set_parameters" href="#dlccontrol.DLCcontrol.set_parameters">set_parameters</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.set_user_level" href="#dlccontrol.DLCcontrol.set_user_level">set_user_level</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.temp_actual" href="#dlccontrol.DLCcontrol.temp_actual">temp_actual</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.temp_control_available" href="#dlccontrol.DLCcontrol.temp_control_available">temp_control_available</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.temp_setpoint" href="#dlccontrol.DLCcontrol.temp_setpoint">temp_setpoint</a></code></li>
-<li><code><a title="dlccontrol.DLCcontrol.temp_setting_present" href="#dlccontrol.DLCcontrol.temp_setting_present">temp_setting_present</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.verbose_emission_status" href="#dlccontrol.DLCcontrol.verbose_emission_status">verbose_emission_status</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.wavelength_actual" href="#dlccontrol.DLCcontrol.wavelength_actual">wavelength_actual</a></code></li>
 <li><code><a title="dlccontrol.DLCcontrol.wavelength_setpoint" href="#dlccontrol.DLCcontrol.wavelength_setpoint">wavelength_setpoint</a></code></li>
-<li><code><a title="dlccontrol.DLCcontrol.wl_setting_present" href="#dlccontrol.DLCcontrol.wl_setting_present">wl_setting_present</a></code></li>
+<li><code><a title="dlccontrol.DLCcontrol.wl_control_available" href="#dlccontrol.DLCcontrol.wl_control_available">wl_control_available</a></code></li>
 </ul>
 </li>
 <li>

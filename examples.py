@@ -10,13 +10,10 @@ import time
 import dlccontrol as ctrl
 
 MY_LASER_IP = "169.254.99.22"
-WL_CONTROLLED = True
-TEMP_CONTROLLED = False
-TUNING = dict(wl_setting_present=WL_CONTROLLED, temp_setting_present=TEMP_CONTROLLED)
 
 
 def properties_demo(ip=MY_LASER_IP):
-    with ctrl.DLCcontrol(ip, **TUNING) as dlc:
+    with ctrl.DLCcontrol(ip) as dlc:
         if dlc.wl_setting_present:
             dlc.wavelength_setpoint = 1550
             actual_wl = dlc.wavelength_actual
@@ -39,18 +36,18 @@ def properties_demo(ip=MY_LASER_IP):
 
 
 def show_all_parameters(ip=MY_LASER_IP):
-    with ctrl.DLCcontrol(ip, **TUNING) as dlc:
+    with ctrl.DLCcontrol(ip) as dlc:
         print("All parameters that can be controlled with this wrapper")
         dlc.get_all_parameters(verbose=True)
 
 
 def save_all_parameters(ip=MY_LASER_IP, fname="laser_parameters"):
-    with ctrl.DLCcontrol(ip, **TUNING) as dlc:
+    with ctrl.DLCcontrol(ip) as dlc:
         dlc.save_parameters(fname)
 
 
 def emission_control(ip=MY_LASER_IP):
-    with ctrl.DLCcontrol(ip, **TUNING) as dlc:
+    with ctrl.DLCcontrol(ip) as dlc:
         print("\nEmission status:\n")
         dlc.verbose_emission_status()
         print("\n(!) WARNING Enabling laser current in three seconds..\n")

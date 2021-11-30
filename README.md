@@ -3,13 +3,14 @@
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/asvela/dlc-control?style=flat-square)](https://www.codefactor.io/repository/github/asvela/dlc-control)
 [![MIT License](https://img.shields.io/github/license/asvela/dlc-control?style=flat-square)](https://github.com/asvela/dlc-control/blob/main/LICENSE)
 
-Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DCLpro
+Convenience wrapper of Toptica Laser SDK for controlling a Toptica CTL with a DLCpro
 
 *Word of caution: This module controls potentially Class 4 lasers.*
 *Use is entirely on your own risk.*
 
 API documentation available [here](https://asvela.github.io/dlc-control/).
-Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py``
+Docs can be built with ``python3 -m pdoc --html -o ./docs dlccontrol.py`` (needs
+pdoc3 to be installed).
 
 The ``DLCcontrol`` class can read and control:
 

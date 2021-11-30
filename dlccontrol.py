@@ -130,6 +130,10 @@ class DLCcontrol:
     """Tells the object whether the laser is controlled with a wavelength setpoint"""
     temp_control_available = False
     """Tells the object whether the laser is controlled with a temperature setpoint"""
+    client = None
+    """After opening the connection the client can be used to control any setting
+    for the DLCpro, for instance `self.client.set("laser1:dl:cc:current-act", 10)`
+    to set the laser diode current to 10mA"""
 
     def __init__(
         self,
@@ -178,9 +182,21 @@ class DLCcontrol:
         if self._is_open:
             self.dlc.close()
 
-    def set_user_level(self, level: int, password: str = "default", verbose=True):
+    def set_user_level(
+        self, level: int, password: str = "default", verbose: bool = True
+    ):
         """Sets the user level privileges of the client *connection*, does not change
-        the user level on the DLCpro console"""
+        the user level on the DLCpro console
+
+        Parameters
+        ----------
+        level : int
+            User level where 3 is normal, 2 is maintenance, 1 is service
+        password : str
+            Password for accessing this level. Using `default` will select the correct
+            passoword for level 3 and 2. For level 1, the password is unique to the
+            DLCpro and can be found in the datasheet.
+        """
         if password == "default":
             if level == 1:
                 print(
@@ -205,7 +221,7 @@ class DLCcontrol:
 
     # Limits and settings ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ##
 
-    def _discover_control(self, verbose=False):
+    def _discover_control(self, verbose: bool = False):
         # Check for wavelength control
         try:
             self.dlc.laser1.ctl.wavelength_min.get()
@@ -234,7 +250,7 @@ class DLCcontrol:
                 f"The laser has diode temperature control: {self.temp_control_available}"
             )
 
-    def get_limits_from_dlc(self, verbose=False) -> dict:
+    def get_limits_from_dlc(self, verbose: bool = False) -> dict:
         """Query the laser for the wavelength, piezo voltage, current and
         scan frequency limits, and populate the ``_lims`` dict attribute
 

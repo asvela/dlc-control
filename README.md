@@ -26,6 +26,8 @@ The ``DLCcontrol`` class can read and control:
     - scan end
     - scan offset
     - scan amplitude
+  * user level (normal, maintenance, service)
+  * any other setting using the ``DLCcontrol.client`` attribute
 
 
 The class will check that the wavelength/temperature setpoint and internal scan 
@@ -69,7 +71,7 @@ temperatures:
 ```
 
 
-### Examples
+### Comparison to the Topica laser SDK
 
 The module uses properties extensively (listed as `Instance variables` in the
 docs), which means class attributes have setter and getter functions,
@@ -78,46 +80,80 @@ which can be used like this:
 ```python
 import dlccontrol as ctrl
 
-with ctrl.DLCcontrol("xx.xx.xx.xx", wl_setting_present=True) as dlc:
-      dlc.wavelength_setpoint = 1550
-      actual_wl = dlc.wavelength_actual
-      # Set up a the analogue remote control sweeping the current with the
-      # on input Fine1
-      dlc.remote_select = "CC"
-      dlc.remote_signal = "Fine1"
-      dlc.remote_factor = 10
-      dlc.remote_enable = True
-      # Use the internal voltage scan and gradually increase the scan amplitude
-      dlc.scan_output_channel = "PC"
-      initial_amplitude = dlc.scan_amplitude
-      dlc.scan_frequency = 20
-      for i in range(10):
-          dlc.scan_amplitude = i
-       dlc.scan_amplitude = initial_amplitude
+with ctrl.DLCcontrol("xx.xx.xx.xx") as dlc:
+    # Change wavelength or laser diode temperature depending on how the unit is
+    # controlled
+    if dlc.wl_setting_present:
+        dlc.wavelength_setpoint = 1550
+        actual_wl = dlc.wavelength_actual
+    if dlc.temp_setting_present:
+        dlc.temp_setpoint = 20
+        actual_temp = dlc.temp_actual
+    # Set up a the analogue remote control sweeping the current with the
+    # on input Fine1
+    dlc.remote_select = "CC"
+    dlc.remote_signal = "Fine1"
+    dlc.remote_factor = 10
+    dlc.remote_enable = True
+    # Use the internal voltage scan and gradually increase the scan amplitude
+    dlc.scan_output_channel = "PC"
+    initial_amplitude = dlc.scan_amplitude
+    dlc.scan_frequency = 20
+    for i in range(10):
+        dlc.scan_amplitude = i
+      dlc.scan_amplitude = initial_amplitude
 ```
 
 Doing the same with the Toptica SDK would look like this (and this module
-is providing a lot of other features in addition to simplifying the syntax)
+is providing other features in addition to simplifying the syntax)
 
 ```python
 import toptica.lasersdk.dlcpro.v2_4_0 as toptica
+import toptica.lasersdk.decop as decop
 
 with toptica.DLCpro(toptica.NetworkConnection("xx.xx.xx.xx")) as dlc:
+    try:
         dlc.laser1.ctl.wavelength_set.set(float(1550))
         actual_wl = dlc.laser1.ctl.wavelength_act.get()
-        # Set up a the analogue remote control sweeping the current with the
-        # on input Fine1
-        dlc.laser1.dl.cc.external_input.signal.set(0)
-        dlc.laser1.dl.cc.external_input.factor.set(10)
-        dlc.laser1.dl.cc.external_input.enable.set(True)
-        # Use the internal voltage scan and gradually increase the scan amplitude
-        dlc.laser1.scan.output_channel.set(50)
-        initial_amplitude = dlc.laser1.scan.amplitude.get()
-        dlc.laser1.scan.frequency.set(20)
-        for i in range(10):
-            dlc.laser1.scan.amplitude.set(float(i))
-        dlc.laser1.scan.amplitude.set(initial_amplitude)
+    except decop.DecopError:
+        pass
+    try:
+        dlc.laser1.dl.tc.temp_set(float(20))
+        actual_temp = dlc.laser1.dl.tc.temp_act.get()
+    except decop.DecopError:
+        pass
+    # Set up a the analogue remote control sweeping the current with the
+    # on input Fine1
+    dlc.laser1.dl.cc.external_input.signal.set(0)
+    dlc.laser1.dl.cc.external_input.factor.set(10)
+    dlc.laser1.dl.cc.external_input.enable.set(True)
+    # Use the internal voltage scan and gradually increase the scan amplitude
+    dlc.laser1.scan.output_channel.set(50)
+    initial_amplitude = dlc.laser1.scan.amplitude.get()
+    dlc.laser1.scan.frequency.set(20)
+    for i in range(10):
+        dlc.laser1.scan.amplitude.set(float(i))
+    dlc.laser1.scan.amplitude.set(initial_amplitude)
 ```
+
+### Access any setting with `client`
+
+If you want to access other settings than what the wrapper conveniently offers, 
+the ``DLCcontrol.client`` attribute is useful as it can give you access to any other setting:
+
+```python
+import dlccontrol as ctrl
+with ctrl.DLCcontrol("xx.xx.xx.xx") as dlc:
+    print(dlc.client.get("serial-number"))
+    # Need higher privilige to access the following commands
+    dlc.set_user_level(1, "password from manual")
+    dlc.client.set("laser1:dl:cc:current-clip", 250)
+    dlc.client.set("laser1:dl:factory-settings:cc:current-clip", 250)
+    dlc.client.exec("laser-common:store-all")
+```
+
+Note also the ``DLCcontrol.set_user_level()`` function to elevate the connection for access
+to protected settings.
 
 More examples are in the `examples.py` module.
 
@@ -142,10 +178,11 @@ please report issues there. Contributions are also welcome.
 The source code is licensed under the MIT license.
 
 
-### Change log
+### Changelog
 
-  * v0.1.1 Nov 2021: 
-    - Added support for temperature tuned lasers
+  * v0.2.0 Nov 2021: 
+    - Added support for temperature tuned lasers, automatic discovery of whether 
+      the laser is wavelength or temperature controlled
     - Adding a `client` attribute to the `DLCcontrol` class to access any laser
       attribute
     - Methods for setting and getting the user level for enabling change of
